@@ -1,0 +1,32 @@
+{
+  "name": "k10-hub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "K10 Hub — Unified full-stack platform for the UNIHIKER K10",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n \"BACKEND,FRONTEND\" -c \"cyan.bold,magenta.bold\" \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build": "npm --prefix backend run build && npm --prefix frontend run build",
+    "build:backend": "npm --prefix backend run build",
+    "build:frontend": "npm --prefix frontend run build",
+    "start": "npm --prefix backend run start",
+    "db:studio": "npm --prefix backend run db:studio",
+    "db:inspect": "npm --prefix backend run db:inspect",
+    "db:seed": "npm --prefix backend run db:seed",
+    "db:reset": "npm --prefix backend run db:reset",
+    "install:all": "npm install && npm --prefix backend install && npm --prefix frontend install"
+  },
+  "dependencies": {
+    "@gltf-transform/core": "^4.5.0",
+    "@gltf-transform/extensions": "^4.5.0",
+    "occt-import-js": "^0.0.23"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
