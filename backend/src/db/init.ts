@@ -1,4 +1,5 @@
 import { client } from '../config/database';
+import crypto from 'crypto';
 
 export async function initDatabase(): Promise<void> {
   // Drop legacy/unused tables
@@ -81,11 +82,11 @@ export async function initDatabase(): Promise<void> {
   // Ensure users table does not have dangling foreign key to dropped authors table
   try {
     const tableSqlRes = await client.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='users'");
-    const sql = String(tableSqlRes.rows[0]?.sql || '');
+    const sql = String(tableSqlRes.rows[0]?.sql || (tableSqlRes.rows[0] as any)?.[0] || '');
     if (sql.includes('REFERENCES authors')) {
       await client.execute('PRAGMA foreign_keys = OFF');
-      await client.execute("CREATE TABLE users_new (id INTEGER PRIMARY KEY AUTOINCREMENT, supabase_uid TEXT NOT NULL UNIQUE, email TEXT NOT NULL UNIQUE, name TEXT NOT NULL, avatar_url TEXT, bio TEXT, github_url TEXT, website_url TEXT, social_platform TEXT, social_url TEXT, instagram_url TEXT, youtube_url TEXT, linkedin_url TEXT, role TEXT NOT NULL DEFAULT 'user', status TEXT NOT NULL DEFAULT 'active', created_at INTEGER DEFAULT (unixepoch()), updated_at INTEGER DEFAULT (unixepoch()), last_sign_in_at INTEGER)");
-      await client.execute('INSERT INTO users_new SELECT id, supabase_uid, email, name, avatar_url, bio, github_url, website_url, social_platform, social_url, instagram_url, youtube_url, linkedin_url, role, status, created_at, updated_at, last_sign_in_at FROM users');
+      await client.execute("CREATE TABLE users_new (id INTEGER PRIMARY KEY AUTOINCREMENT, user_key TEXT UNIQUE, supabase_uid TEXT NOT NULL UNIQUE, email TEXT NOT NULL UNIQUE, name TEXT NOT NULL, avatar_url TEXT, bio TEXT, github_url TEXT, website_url TEXT, social_platform TEXT, social_url TEXT, instagram_url TEXT, youtube_url TEXT, linkedin_url TEXT, role TEXT NOT NULL DEFAULT 'user', status TEXT NOT NULL DEFAULT 'active', is_email_verified INTEGER NOT NULL DEFAULT 0, email_confirmed_at INTEGER, created_at INTEGER DEFAULT (unixepoch()), updated_at INTEGER DEFAULT (unixepoch()), last_sign_in_at INTEGER)");
+      await client.execute('INSERT INTO users_new (id, supabase_uid, email, name, avatar_url, bio, github_url, website_url, social_platform, social_url, instagram_url, youtube_url, linkedin_url, role, status, created_at, updated_at, last_sign_in_at) SELECT id, supabase_uid, email, name, avatar_url, bio, github_url, website_url, social_platform, social_url, instagram_url, youtube_url, linkedin_url, role, status, created_at, updated_at, last_sign_in_at FROM users');
       await client.execute('DROP TABLE users');
       await client.execute('ALTER TABLE users_new RENAME TO users');
       await client.execute('PRAGMA foreign_keys = ON');
@@ -171,40 +172,39 @@ export async function initDatabase(): Promise<void> {
     );
   `);
 
-  // Ensure user_key column exists on existing installations and backfill if null
-  try {
-    let hasUserKey = false;
-    try {
-      const tableInfo = await client.execute("PRAGMA table_info(users)");
-      hasUserKey = tableInfo.rows.some((r: any) => {
-        if (!r) return false;
-        return r.name === 'user_key' || r[1] === 'user_key' || r.NAME === 'user_key';
-      });
-    } catch {
-      hasUserKey = false;
-    }
+  // Ensure all required columns exist on users table
+  const userColumnsToEnsure = [
+    { name: 'user_key', type: 'TEXT' },
+    { name: 'is_email_verified', type: 'INTEGER NOT NULL DEFAULT 0' },
+    { name: 'email_confirmed_at', type: 'INTEGER' },
+  ];
 
-    if (!hasUserKey) {
-      try {
-        await client.execute("ALTER TABLE users ADD COLUMN user_key TEXT");
-        console.log('✅ Added missing user_key column to users table.');
-      } catch (alterErr: any) {
-        const msg = String(alterErr?.message || alterErr || '').toLowerCase();
-        if (!msg.includes('duplicate column')) {
-          console.warn('ALTER TABLE notice:', alterErr);
-        }
+  for (const col of userColumnsToEnsure) {
+    try {
+      await client.execute(`ALTER TABLE users ADD COLUMN ${col.name} ${col.type}`);
+      console.log(`✅ Added missing ${col.name} column to users table.`);
+    } catch (err: any) {
+      const msg = String(err?.message || err || '').toLowerCase();
+      if (!msg.includes('duplicate column')) {
+        console.warn(`Column check notice for users.${col.name}:`, err);
       }
     }
+  }
 
-    // Backfill any existing users missing user_key
-    try {
-      await client.execute("UPDATE users SET user_key = 'usr_' || lower(hex(randomblob(4))) WHERE user_key IS NULL");
-      await client.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_user_key ON users(user_key)");
-    } catch (backfillErr) {
-      console.warn('user_key backfill notice:', backfillErr);
+  // Backfill any existing users missing user_key individually with random hex
+  try {
+    const existingWithoutKey = await client.execute("SELECT id FROM users WHERE user_key IS NULL");
+    for (const r of existingWithoutKey.rows) {
+      const id = (r as any).id ?? r[0];
+      const newKey = `usr_${crypto.randomBytes(4).toString('hex')}`;
+      await client.execute({
+        sql: "UPDATE users SET user_key = ? WHERE id = ?",
+        args: [newKey, id],
+      });
     }
-  } catch (userKeyErr) {
-    console.warn('user_key column check notice:', userKeyErr);
+    await client.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_user_key ON users(user_key)");
+  } catch (backfillErr) {
+    console.warn('user_key backfill notice:', backfillErr);
   }
 
   await client.execute(`

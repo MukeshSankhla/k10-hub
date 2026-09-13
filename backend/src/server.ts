@@ -62,6 +62,27 @@ const authLimiter = rateLimit({
   },
 });
 
+let dbInitPromise: Promise<void> | null = null;
+export function ensureDatabaseReady(): Promise<void> {
+  if (!dbInitPromise) {
+    dbInitPromise = initDatabase().catch((err) => {
+      dbInitPromise = null;
+      throw err;
+    });
+  }
+  return dbInitPromise;
+}
+
+// Ensure database tables & column migrations are ready before handling ANY request
+app.use(async (_req, _res, next) => {
+  try {
+    await ensureDatabaseReady();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
 // API Routes
 app.use('/api/health', healthRoutes);
 app.use('/api/projects', projectRoutes);
@@ -104,27 +125,6 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
       ? 'An unexpected internal server error occurred'
       : (err.message || 'An unexpected error occurred'),
   });
-});
-
-let dbInitPromise: Promise<void> | null = null;
-export function ensureDatabaseReady(): Promise<void> {
-  if (!dbInitPromise) {
-    dbInitPromise = initDatabase().catch((err) => {
-      dbInitPromise = null;
-      throw err;
-    });
-  }
-  return dbInitPromise;
-}
-
-// In serverless environments (e.g. Vercel), ensure DB tables are ready before handling requests
-app.use(async (_req, _res, next) => {
-  try {
-    await ensureDatabaseReady();
-    next();
-  } catch (err) {
-    next(err);
-  }
 });
 
 let serverInstance: any = null;
