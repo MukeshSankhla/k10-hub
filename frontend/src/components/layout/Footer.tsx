@@ -1,24 +1,50 @@
 import { Link } from 'react-router-dom';
-import { Github, ExternalLink } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 
 const PLATFORM_LINKS = [
-  { label: 'Learn', href: '/learn' },
-  { label: 'Projects', href: '/projects' },
-  { label: 'Community', href: '/community' },
-  { label: 'About', href: '/about' },
+  { label: 'Projects Gallery', href: '/projects' },
+  { label: 'Hands-on Tutorials', href: '/tutorials' },
+  { label: 'About K10 Hub', href: '/about' },
+  { label: 'Frequently Asked Questions', href: '/faq' },
 ];
 
 const RESOURCE_LINKS = [
-  { label: 'UNIHIKER K10', href: 'https://www.dfrobot.com/product-2671.html', external: true },
-  { label: 'Arduino Docs', href: 'https://www.arduino.cc/reference/en/', external: true },
-  { label: 'MicroPython', href: 'https://micropython.org/', external: true },
-  { label: 'DFRobot', href: 'https://www.dfrobot.com/', external: true },
+  {
+    label: 'UNIHIKER Official',
+    href: 'https://www.unihiker.com/',
+    title: 'Learning Devices for Exploring: AI, IoT, and Python Coding',
+    external: true,
+  },
+  {
+    label: 'Arduino IDE Documentation',
+    href: 'https://www.unihiker.com/wiki/K10/GettingStarted/gettingstarted_arduinoide/',
+    title: 'Arduino IDE - UNIHIKER Documentation',
+    external: true,
+  },
+  {
+    label: 'MicroPython Documentation',
+    href: 'https://www.unihiker.com/wiki/K10/GettingStarted/gettingstarted_mpy/',
+    title: 'MicroPython - UNIHIKER Documentation',
+    external: true,
+  },
+  {
+    label: 'DFRobot Store & Kits',
+    href: 'https://www.dfrobot.com/',
+    title: 'DFRobot Open-Source Hardware Electronics and Kits',
+    external: true,
+  },
 ];
 
-const DEVELOPER_LINKS = [
-  { label: 'GitHub', href: 'https://github.com/mukeshsankhla', external: true },
-  { label: 'EasyFlash', href: 'https://mukeshsankhla.github.io/EasyFlash/', external: true },
-  { label: 'API Reference', href: '/api/health', external: true },
+const COMMUNITY_LINKS = [
+  {
+    label: 'DFRobot Maker Community',
+    href: 'https://community.dfrobot.com/',
+    title: 'DFRobot Maker Community - A community dedicated to learning open source hardware and sharing maker stories.',
+    external: true,
+  },
+  { label: 'Legal & Policies', href: '/legal', external: false },
+  { label: 'Hardware Flashing Safety', href: '/legal', external: false },
+  { label: 'Help & Knowledge Base', href: '/faq', external: false },
 ];
 
 export default function Footer() {
@@ -28,87 +54,152 @@ export default function Footer() {
     <footer className="footer" role="contentinfo">
       <div className="container">
         <div className="footer__inner">
-          {/* Brand */}
+          {/* Brand & Identity Column */}
           <div className="footer__brand">
-            <Link to="/" className="footer__brand-name" style={{ textDecoration: 'none' }}>
-              K10 Hub
+            <Link to="/" className="footer__brand-header" aria-label="K10 Hub home">
+              <div
+                className="nav__logo-mark"
+                aria-hidden="true"
+                style={{
+                  width: 32,
+                  height: 32,
+                  background: 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <svg width="30" height="30" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="1" y="1" width="6" height="6" rx="1.5" fill="var(--color-ink-primary)" />
+                  <rect x="9" y="1" width="6" height="6" rx="1.5" fill="var(--color-ink-primary)" opacity="0.55" />
+                  <rect x="1" y="9" width="6" height="6" rx="1.5" fill="var(--color-ink-primary)" opacity="0.55" />
+                  <rect x="9" y="9" width="6" height="6" rx="1.5" fill="var(--color-ink-primary)" />
+                </svg>
+              </div>
+              <div>
+                <div className="footer__brand-title">K10 Hub</div>
+                <div className="footer__brand-subtitle">UNIHIKER K10 Platform</div>
+              </div>
             </Link>
+
             <p className="footer__brand-tagline">
-              Learn, build and explore with the UNIHIKER K10 — from LED Blink to AI Vision.
+              The open project and firmware platform for the UNIHIKER K10. Discover beginner-friendly builds, author tutorials, and flash firmware directly from your browser.
             </p>
-            <a
-              href="https://github.com/mukeshsankhla"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn--secondary btn--sm"
-              style={{ alignSelf: 'flex-start', marginTop: 'var(--space-2)' }}
-            >
-              <Github size={14} aria-hidden="true" />
-              GitHub
-            </a>
+
+            <div className="footer__status-badge" aria-label="System status: Web Serial Flashing Active">
+              <span className="footer__status-dot" aria-hidden="true" />
+              <span>Web Serial Flashing Active</span>
+            </div>
           </div>
 
-          {/* Platform Links */}
-          <div>
-            <p className="footer__col-title">Platform</p>
+          {/* Column 2: Platform */}
+          <div className="footer__col">
+            <div className="footer__col-title">Platform</div>
             <ul className="footer__links">
               {PLATFORM_LINKS.map((link) => (
                 <li key={link.href}>
-                  <Link to={link.href} className="footer__link">{link.label}</Link>
+                  <Link to={link.href} className="footer__link">
+                    {link.label}
+                  </Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Resources */}
-          <div>
-            <p className="footer__col-title">Resources</p>
+          {/* Column 3: Documentation */}
+          <div className="footer__col">
+            <div className="footer__col-title">Documentation</div>
             <ul className="footer__links">
               {RESOURCE_LINKS.map((link) => (
                 <li key={link.href}>
                   <a
                     href={link.href}
                     className="footer__link"
+                    title={link.title}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    {link.label}
-                    <ExternalLink size={10} aria-hidden="true" style={{ display: 'inline', marginLeft: '4px', verticalAlign: 'middle', opacity: 0.5 }} />
+                    <span>{link.label}</span>
+                    <ArrowUpRight size={12} className="footer__link-icon" aria-hidden="true" />
                   </a>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Developer */}
-          <div>
-            <p className="footer__col-title">Developer</p>
+          {/* Column 4: Community & Legal */}
+          <div className="footer__col">
+            <div className="footer__col-title">Community &amp; Legal</div>
             <ul className="footer__links">
-              {DEVELOPER_LINKS.map((link) => (
-                <li key={link.href}>
-                  <a
-                    href={link.href}
-                    className="footer__link"
-                    target={link.external ? '_blank' : undefined}
-                    rel={link.external ? 'noopener noreferrer' : undefined}
-                  >
-                    {link.label}
-                    {link.external && <ExternalLink size={10} aria-hidden="true" style={{ display: 'inline', marginLeft: '4px', verticalAlign: 'middle', opacity: 0.5 }} />}
-                  </a>
+              {COMMUNITY_LINKS.map((link) => (
+                <li key={link.label}>
+                  {link.external ? (
+                    <a
+                      href={link.href}
+                      className="footer__link"
+                      title={link.title}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <span>{link.label}</span>
+                      <ArrowUpRight size={12} className="footer__link-icon" aria-hidden="true" />
+                    </a>
+                  ) : (
+                    <Link to={link.href} className="footer__link">
+                      {link.label}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
           </div>
         </div>
 
-        {/* Bottom bar */}
+        {/* Bottom Bar */}
         <div className="footer__bottom">
           <p className="footer__copyright">
-            &copy; {year} K10 Hub. Built by Mukesh Sankhla.
+            <span>
+              &copy; {year} K10 Hub. Built by{' '}
+              <a
+                href="https://www.linkedin.com/in/mukeshsankhla/"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: 'inherit',
+                  textDecoration: 'underline',
+                  textUnderlineOffset: '2px',
+                  fontWeight: 500,
+                  transition: 'color 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-ink-primary)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'inherit')}
+              >
+                Mukesh Sankhla
+              </a>
+              .
+            </span>
           </p>
+
           <div className="footer__legal">
-            <span className="footer__link" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-ink-tertiary)' }}>
-              UNIHIKER K10 is a product of DFRobot
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-ink-tertiary)' }}>
+              UNIHIKER K10 is a product of{' '}
+              <a
+                href="https://www.dfrobot.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: 'inherit',
+                  textDecoration: 'underline',
+                  textUnderlineOffset: '2px',
+                  fontWeight: 500,
+                  transition: 'color 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-ink-primary)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'inherit')}
+              >
+                DFRobot
+              </a>
             </span>
           </div>
         </div>

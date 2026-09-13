@@ -153,12 +153,12 @@ export default function Header() {
           {/* Left: Brand Wordmark + Navigation Links aligned together */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '36px' }}>
             <Link to="/" className="nav__wordmark" aria-label="K10 Hub home" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
-              <div className="nav__logo-mark" aria-hidden="true" style={{ width: 38, height: 38, borderRadius: '9px' }}>
-                <svg width="22" height="22" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="2" y="2" width="6" height="6" rx="1" fill="#F8F6F1"/>
-                  <rect x="10" y="2" width="6" height="6" rx="1" fill="#F8F6F1" opacity="0.5"/>
-                  <rect x="2" y="10" width="6" height="6" rx="1" fill="#F8F6F1" opacity="0.5"/>
-                  <rect x="10" y="10" width="6" height="6" rx="1" fill="#F8F6F1"/>
+              <div className="nav__logo-mark" aria-hidden="true" style={{ width: 34, height: 34, background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="34" height="34" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="1" y="1" width="6" height="6" rx="1.5" fill="var(--color-ink-primary)"/>
+                  <rect x="9" y="1" width="6" height="6" rx="1.5" fill="var(--color-ink-primary)" opacity="0.55"/>
+                  <rect x="1" y="9" width="6" height="6" rx="1.5" fill="var(--color-ink-primary)" opacity="0.55"/>
+                  <rect x="9" y="9" width="6" height="6" rx="1.5" fill="var(--color-ink-primary)"/>
                 </svg>
               </div>
               <div>

@@ -16,6 +16,9 @@ const AdminDashboardPage = React.lazy(() => import('./pages/admin/AdminDashboard
 const ProjectsGalleryPage = React.lazy(() => import('./pages/projects/ProjectsGalleryPage'));
 const ProjectDetailPage = React.lazy(() => import('./pages/projects/ProjectDetailPage'));
 const ProjectEditorPage = React.lazy(() => import('./pages/projects/ProjectEditorPage'));
+const AboutPage = React.lazy(() => import('./pages/AboutPage'));
+const LegalPage = React.lazy(() => import('./pages/LegalPage'));
+const FaqPage = React.lazy(() => import('./pages/FaqPage'));
 
 export default function App() {
   return (
@@ -64,10 +67,15 @@ export default function App() {
               <Route path="/tutorial/:id" element={<ProjectDetailPage />} />
               <Route path="/tutorials/:id" element={<ProjectDetailPage />} />
 
-              {/* Informational Routes */}
+              {/* Informational & Legal Routes */}
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/faq" element={<FaqPage />} />
+              <Route path="/legal" element={<LegalPage />} />
+              <Route path="/policies" element={<LegalPage />} />
+              <Route path="/terms" element={<LegalPage />} />
+              <Route path="/privacy" element={<LegalPage />} />
               <Route path="/learn" element={<ComingSoon title="Learn" />} />
               <Route path="/community" element={<ComingSoon title="Community" />} />
-              <Route path="/about" element={<ComingSoon title="About" />} />
               <Route path="*" element={<ComingSoon title="Page Not Found" />} />
             </Routes>
           </Suspense>

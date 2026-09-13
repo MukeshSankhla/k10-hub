@@ -728,6 +728,36 @@ export default function ProfilePage() {
                       {displayName}
                     </h1>
                     <UserBadge role={roleToDisplay} size={20} />
+                    {displayUserKey && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const textToCopy = `${displayName} (${displayUserKey})`;
+                          navigator.clipboard.writeText(textToCopy);
+                          setCopiedKey(true);
+                          toast.success(`Copied "${textToCopy}" to clipboard!`);
+                          setTimeout(() => setCopiedKey(false), 1500);
+                        }}
+                        title={`Copy User Name & ID: ${displayName} (${displayUserKey})`}
+                        aria-label="Copy User Name and ID"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '26px',
+                          height: '26px',
+                          padding: 0,
+                          borderRadius: '6px',
+                          border: '1px solid var(--color-border)',
+                          backgroundColor: copiedKey ? 'rgba(34, 197, 94, 0.1)' : 'var(--color-paper)',
+                          color: copiedKey ? '#16a34a' : 'var(--color-ink-tertiary)',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        {copiedKey ? <Check size={13} color="#16a34a" /> : <Copy size={13} />}
+                      </button>
+                    )}
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'var(--space-1)', flexWrap: 'wrap' }}>
@@ -770,41 +800,6 @@ export default function ProfilePage() {
                       )
                     )}
                   </div>
-
-                  {displayUserKey && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(displayUserKey);
-                          setCopiedKey(true);
-                          toast.success(`User ID ${displayUserKey} copied to clipboard!`);
-                          setTimeout(() => setCopiedKey(false), 1500);
-                        }}
-                        title="Unique immutable User ID — Click to copy"
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '5px',
-                          fontSize: '11px',
-                          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-                          color: 'var(--color-ink-secondary)',
-                          backgroundColor: 'var(--color-paper)',
-                          border: '1px solid var(--color-border)',
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          userSelect: 'all',
-                          lineHeight: 1.2,
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        <span style={{ color: 'var(--color-accent)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>User ID:</span>
-                        <span>{displayUserKey}</span>
-                        {copiedKey ? <Check size={12} color="#16a34a" /> : <Copy size={12} />}
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
 

@@ -358,8 +358,8 @@ function K10GLBModel({
     const maxDim = Math.max(size.x, size.y, size.z);
 
     if (maxDim > 0) {
-      // Scale model to 2.2 units with camera distance 4.6 to ensure full board is visible with comfortable padding
-      const scale = 2.2 / maxDim;
+      // Scale model by +20% (from 2.2 to 2.64) to provide a larger, more immersive 3D hero visualization
+      const scale = 2.64 / maxDim;
       setTransform({
         scale,
         position: [-center.x * scale, -center.y * scale, -center.z * scale],
@@ -502,7 +502,7 @@ function K10Scene({
         <ComponentCallout comp={activeCallout.comp} position={activeCallout.point} />
       )}
 
-      <ContactShadows position={[0, -1.25, 0]} opacity={0.25} scale={6} blur={2.0} far={3.5} color="#1C1917" />
+      <ContactShadows position={[0, -1.48, 0]} opacity={0.25} scale={7.2} blur={2.2} far={3.5} color="#1C1917" />
 
       {/* OrbitControls: autoRotate stops smoothly on hover without camera zoom */}
       <OrbitControls

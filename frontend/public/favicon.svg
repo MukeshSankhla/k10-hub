@@ -1,7 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <rect width="32" height="32" rx="6" fill="#1C1917"/>
-  <rect x="5" y="5" width="10" height="10" rx="2" fill="#F8F6F1"/>
-  <rect x="17" y="5" width="10" height="10" rx="2" fill="#F8F6F1" opacity="0.4"/>
-  <rect x="5" y="17" width="10" height="10" rx="2" fill="#F8F6F1" opacity="0.4"/>
-  <rect x="17" y="17" width="10" height="10" rx="2" fill="#F8F6F1"/>
+  <style>
+    :root {
+      --sq-fill: #1C1917;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --sq-fill: #F8F6F1;
+      }
+    }
+    .sq-solid { fill: var(--sq-fill); }
+    .sq-dim { fill: var(--sq-fill); opacity: 0.45; }
+  </style>
+  <rect class="sq-solid" x="2" y="2" width="12.5" height="12.5" rx="3" fill="#1C1917"/>
+  <rect class="sq-dim" x="17.5" y="2" width="12.5" height="12.5" rx="3" fill="#1C1917" opacity="0.45"/>
+  <rect class="sq-dim" x="2" y="17.5" width="12.5" height="12.5" rx="3" fill="#1C1917" opacity="0.45"/>
+  <rect class="sq-solid" x="17.5" y="17.5" width="12.5" height="12.5" rx="3" fill="#1C1917"/>
 </svg>

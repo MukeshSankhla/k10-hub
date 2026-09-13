@@ -147,7 +147,7 @@ export default function ProjectCard({ project, isCurrentAuthor }: ProjectCardPro
             {getLevelLabel(project.level)}
           </div>
 
-          {/* Top-Right Bookmark Button */}
+          {/* Bottom-Right Bookmark Button (Separated from top-right diagonal indicator ribbon) */}
           <button
             type="button"
             onClick={(e) => {
@@ -173,25 +173,26 @@ export default function ProjectCard({ project, isCurrentAuthor }: ProjectCardPro
             }}
             style={{
               position: 'absolute',
-              top: 10,
+              bottom: 10,
               right: 10,
               zIndex: 3,
               backgroundColor: isBookmarked ? 'var(--color-accent)' : 'rgba(0, 0, 0, 0.65)',
               backdropFilter: 'blur(4px)',
-              border: isBookmarked ? 'none' : '1px solid rgba(255, 255, 255, 0.2)',
+              border: isBookmarked ? 'none' : '1px solid rgba(255, 255, 255, 0.25)',
               color: '#fff',
               borderRadius: '6px',
-              width: 26,
-              height: 26,
+              width: 28,
+              height: 28,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
               transition: 'all 0.15s ease',
+              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.3)',
             }}
             title={isBookmarked ? 'Remove from bookmarks' : 'Bookmark this project'}
           >
-            <Bookmark size={13} fill={isBookmarked ? '#fff' : 'none'} />
+            <Bookmark size={14} fill={isBookmarked ? '#fff' : 'none'} />
           </button>
 
           {/* Featured Pill if marked as featured */}
