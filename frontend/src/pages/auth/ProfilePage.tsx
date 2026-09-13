@@ -53,7 +53,7 @@ import {
   saveKnownAuthor,
 } from '../../services/projects/projectStorageService';
 import { getLocalFlashCount, subscribeProjectFlashCount } from '../../services/flasher/flashCountService';
-import UserBadge from '../../components/common/UserBadge';
+import UserBadge, { isKnownAdmin } from '../../components/common/UserBadge';
 
 function ProjectFlashCount({ projectId, initialCount = 0 }: { projectId: string; initialCount?: number }) {
   const [count, setCount] = useState<number>(() => Math.max(initialCount || 0, getLocalFlashCount(projectId)));
@@ -560,9 +560,17 @@ export default function ProfilePage() {
     ? (profile?.avatarUrl || user?.user_metadata?.avatar_url)
     : (publicUser?.avatarUrl || publicSampleProject?.authorAvatar);
 
-  const roleToDisplay = isOwnProfile
+  const rawRole = isOwnProfile
     ? role
     : (publicUser?.role || publicSampleProject?.authorRole || 'author');
+
+  const roleToDisplay = isKnownAdmin({
+    name: displayName,
+    email: isOwnProfile ? displayEmail : (publicUser?.email || publicSampleProject?.authorEmail),
+    role: rawRole,
+  })
+    ? 'admin'
+    : rawRole;
 
   const bio = isOwnProfile
     ? (profile?.bio || profile?.author?.bio || '')

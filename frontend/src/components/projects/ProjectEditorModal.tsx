@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { ProjectDetail, FirmwareConfig, AVAILABLE_TOPICS } from '../../config/projectsData';
 import { saveProject, parseVideoEmbedUrl, formatCurrentPublishDate } from '../../services/projects/projectStorageService';
+import { isKnownAdmin } from '../common/UserBadge';
 
 interface ProjectEditorModalProps {
   isOpen: boolean;
@@ -264,7 +265,7 @@ export default function ProjectEditorModal({
         type,
         level,
         author: author.trim() || 'Mukesh Sankhla',
-        authorRole: authorRole.trim() || 'Author',
+        authorRole: isKnownAdmin({ name: author, role: authorRole }) ? 'admin' : (authorRole.trim() || 'Author'),
         authorAvatar: authorAvatar.trim() || undefined,
         publishDate: activeInitial?.publishDate || formatCurrentPublishDate(),
         flashCount: activeInitial?.flashCount || 0,

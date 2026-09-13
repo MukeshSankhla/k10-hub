@@ -53,7 +53,12 @@ export function parseProjectRow(row: any) {
     level: Number(row.level) || 1,
     author: row.author || 'Maker',
     authorAvatar: row.authorAvatar || '',
-    authorRole: row.authorRole || 'author',
+    authorRole:
+      (row.authorRole && row.authorRole.toLowerCase().includes('admin')) ||
+      (row.authorEmail && (row.authorEmail.toLowerCase() === 'mukeshdiy1@gmail.com' || row.authorEmail.toLowerCase() === 'admin@k10hub.io' || row.authorEmail.toLowerCase() === 'mukesh@makerbrains.com')) ||
+      (row.author && (row.author.toLowerCase() === 'mukesh sankhla' || row.author.toLowerCase() === 'mukesh admin' || row.author.toLowerCase() === 'admin'))
+        ? 'admin'
+        : (row.authorRole || 'author'),
     authorId: row.authorId || '',
     authorEmail: row.authorEmail || '',
     status: row.status || 'published',
@@ -239,9 +244,15 @@ export class ProjectService {
 
     const authorName = payload.author || existing?.author || user?.name || 'Maker';
     const authorAvatar = payload.authorAvatar !== undefined ? payload.authorAvatar : (existing?.authorAvatar || user?.avatarUrl || '');
-    const authorRole = payload.authorRole !== undefined ? payload.authorRole : (existing?.authorRole || user?.role || 'author');
+    const rawRole = payload.authorRole !== undefined ? payload.authorRole : (existing?.authorRole || user?.role || 'author');
     const authorId = payload.authorId !== undefined ? payload.authorId : (existing?.authorId || (user ? String(user.id) : ''));
     const authorEmail = payload.authorEmail !== undefined ? payload.authorEmail : (existing?.authorEmail || user?.email || '');
+    const isAuthorAdmin =
+      (user && user.role === 'admin') ||
+      (rawRole && rawRole.toLowerCase().includes('admin')) ||
+      (authorEmail && (authorEmail.toLowerCase() === 'mukeshdiy1@gmail.com' || authorEmail.toLowerCase() === 'admin@k10hub.io' || authorEmail.toLowerCase() === 'mukesh@makerbrains.com')) ||
+      (authorName && (authorName.toLowerCase() === 'mukesh sankhla' || authorName.toLowerCase() === 'mukesh admin' || authorName.toLowerCase() === 'admin'));
+    const authorRole = isAuthorAdmin ? 'admin' : rawRole;
 
     const isFeaturedVal = Boolean(payload.featured ?? payload.isFeatured ?? existing?.featured ?? false);
 

@@ -1,5 +1,6 @@
 import { ProjectDetail } from '../../config/projectsData';
 import { api } from '../api';
+import { isKnownAdmin } from '../../components/common/UserBadge';
 
 const STORAGE_KEY = 'k10_projects_store_v3';
 const UPDATE_EVENT = 'k10_projects_updated';
@@ -49,7 +50,9 @@ export async function refreshProjectsFromBackend(retryCount = 0): Promise<Projec
         level: Number(p.level) || 1,
         author: p.author || 'Maker',
         authorAvatar: p.authorAvatar || '',
-        authorRole: p.authorRole || 'author',
+        authorRole: isKnownAdmin({ name: p.author, email: p.authorEmail, role: p.authorRole })
+          ? 'admin'
+          : (p.authorRole || 'author'),
         authorId: p.authorId || '',
         authorEmail: p.authorEmail || '',
         status: p.status || 'published',
@@ -295,11 +298,17 @@ export function resolveProjectAuthor(
         project.authorRole ||
         'author';
       const liveId = String(currentProfile?.id || currentUser?.id || project.authorId || '');
+      const isLiveAdmin = isKnownAdmin({
+        name: liveName,
+        email: currentProfile?.email || currentUser?.email || project.authorEmail,
+        role: liveRole,
+        id: liveId,
+      });
 
       return {
         name: liveName,
         avatarUrl: liveAvatar,
-        role: liveRole,
+        role: isLiveAdmin ? 'admin' : liveRole,
         authorId: liveId,
         isCurrentUser: true,
       };
@@ -318,20 +327,33 @@ export function resolveProjectAuthor(
     (nameKey && cache[nameKey]);
 
   if (cached && cached.name) {
+    const isCachedAdmin = isKnownAdmin({
+      name: cached.name,
+      email: cached.email || project.authorEmail,
+      role: cached.role || project.authorRole,
+      id: cached.id || project.authorId,
+    });
     return {
       name: cached.name,
       avatarUrl: cached.avatarUrl || project.authorAvatar || '',
-      role: cached.role || project.authorRole || 'author',
+      role: isCachedAdmin ? 'admin' : (cached.role || project.authorRole || 'author'),
       authorId: cached.id || project.authorId || '',
       isCurrentUser: false,
     };
   }
 
   // 3. Fallback to static snapshot on project
+  const isAuthorAdmin = isKnownAdmin({
+    name: project.author,
+    email: project.authorEmail,
+    role: project.authorRole,
+    id: project.authorId,
+  });
+
   return {
     name: project.author || 'Maker',
     avatarUrl: project.authorAvatar || '',
-    role: project.authorRole || 'author',
+    role: isAuthorAdmin ? 'admin' : (project.authorRole || 'author'),
     authorId: project.authorId || '',
     isCurrentUser: false,
   };
@@ -427,7 +449,13 @@ export function syncCurrentUserProjects(currentUser?: any, currentProfile?: any)
     currentUser?.user_metadata?.full_name ||
     (userEmail ? userEmail.split('@')[0] : '');
   const userAvatar = currentProfile?.avatarUrl || currentUser?.user_metadata?.avatar_url || '';
-  const userRole = currentProfile?.role || 'author';
+  const isCurrAdmin = isKnownAdmin({
+    name: userName,
+    email: userEmail,
+    role: currentProfile?.role,
+    id: userId,
+  });
+  const userRole = isCurrAdmin ? 'admin' : (currentProfile?.role || 'author');
 
   if (!userName && !userId) return 0;
 

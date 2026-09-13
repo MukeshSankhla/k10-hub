@@ -14,7 +14,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import UserBadge from '../common/UserBadge';
+import UserBadge, { isKnownAdmin } from '../common/UserBadge';
 import NotificationBell from '../notifications/NotificationBell';
 import EmailVerificationBanner from '../auth/EmailVerificationBanner';
 import { getPublicProjects, resolveProjectAuthor } from '../../services/projects/projectStorageService';
@@ -103,7 +103,7 @@ export default function Header() {
         authorMap.set(key, {
           name: authorInfo.name,
           avatar: authorInfo.avatarUrl,
-          role: authorInfo.role,
+          role: isKnownAdmin({ name: authorInfo.name, role: authorInfo.role }) ? 'admin' : authorInfo.role,
           id: authorInfo.authorId,
         });
       }
@@ -115,7 +115,7 @@ export default function Header() {
         authorMap.set(selfKey, {
           name: profile.name,
           avatar: profile.avatarUrl || user?.user_metadata?.avatar_url,
-          role: role || 'user',
+          role: isKnownAdmin({ name: profile.name, role }) ? 'admin' : (role || 'user'),
           id: String(profile.id || user?.id || ''),
         });
       }

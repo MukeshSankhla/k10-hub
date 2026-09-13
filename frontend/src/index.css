@@ -515,12 +515,15 @@ button {
 
 /* ─── Hero ───────────────────────────────────────────────────────────────────── */
 .hero {
-  padding-top: calc(var(--nav-height) + clamp(var(--space-3), 2vh, var(--space-5)));
-  padding-bottom: clamp(var(--space-4), 2.5vh, var(--space-6));
-  min-height: auto;
-  display: flex;
-  align-items: center;
   position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-top: calc(var(--nav-height) + clamp(var(--space-2), 2vh, var(--space-6)));
+  padding-bottom: clamp(var(--space-6), 4vh, var(--space-10));
+  box-sizing: border-box;
 }
 
 .hero__motion-canvas {
@@ -544,12 +547,13 @@ button {
   gap: clamp(var(--space-6), 3vw, var(--space-12));
   align-items: center;
   width: 100%;
+  margin-block: auto;
 }
 
 .hero__content {
   display: flex;
   flex-direction: column;
-  gap: clamp(var(--space-3), 1.5vh, var(--space-5));
+  gap: clamp(var(--space-3), 2vh, var(--space-6));
   max-width: 640px;
 }
 
@@ -651,16 +655,17 @@ button {
 
 .hero__scroll-indicator {
   position: absolute;
-  bottom: 24px;
+  bottom: clamp(16px, 2.5vh, 28px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 5;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
-  background: rgba(255, 255, 255, 0.92);
+  padding: 7px 16px;
+  background: rgba(255, 255, 255, 0.94);
   border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
   font-family: var(--font-mono);
   font-size: 0.6875rem;
   font-weight: var(--weight-bold);
@@ -675,7 +680,9 @@ button {
 .hero__scroll-indicator:hover {
   border-color: var(--color-accent);
   color: var(--color-accent);
+  background: #ffffff;
   transform: translateX(-50%) translateY(2px);
+  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.12);
 }
 
 .hero__scroll-indicator-icon {
@@ -689,6 +696,10 @@ button {
   50% {
     transform: translateY(3px);
   }
+}
+
+#featured-projects {
+  scroll-margin-top: calc(var(--nav-height) + var(--space-4));
 }
 
 
@@ -909,8 +920,8 @@ button {
 .hero__model-container {
   position: relative;
   width: 100%;
-  height: clamp(300px, 42vh, 420px);
-  min-height: 280px;
+  height: clamp(380px, 50vh, 500px);
+  min-height: 300px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1759,9 +1770,20 @@ button {
     --container-pad: var(--space-5);
   }
 
+  .hero {
+    min-height: auto;
+    padding-top: calc(var(--nav-height) + var(--space-6));
+    padding-bottom: var(--space-10);
+  }
+
+  .hero__scroll-indicator {
+    display: none;
+  }
+
   .hero__inner {
     grid-template-columns: 1fr;
-    gap: var(--space-12);
+    gap: var(--space-10);
+    margin-block: 0;
   }
 
   .hero__content {
@@ -1915,11 +1937,50 @@ button {
   }
 }
 
-/* ─── Large & Ultrawide Display Optimizations ───────────────────────────────── */
+/* ─── Adaptive Desktop & Large Display Optimizations ────────────────────────── */
+@media (min-width: 1280px) and (max-width: 1799px) {
+  .hero__model-container {
+    height: clamp(440px, 58vh, 580px);
+  }
+}
+
 @media (min-width: 1800px) {
   .hero__inner {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
     gap: var(--space-16);
+  }
+
+  .hero__content {
+    max-width: 680px;
+    gap: clamp(var(--space-4), 2.4vh, var(--space-6));
+  }
+
+  .hero__headline {
+    font-size: clamp(2.5rem, 4vw, 4.75rem);
+  }
+
+  .hero__description {
+    font-size: clamp(1.125rem, 1.2vw, 1.35rem);
+    max-width: 62ch;
+  }
+
+  .hero__feature-strip {
+    padding: 0.65rem 1rem;
+    font-size: 0.78rem;
+  }
+
+  .hero__discipline-tag {
+    font-size: 0.8125rem;
+    padding: 0.3rem 0.75rem;
+  }
+
+  .hero__actions .btn {
+    padding: 0.75rem 1.5rem;
+    font-size: var(--text-base);
+  }
+
+  .hero__model-container {
+    height: clamp(540px, 66vh, 720px);
   }
 }
 
@@ -1927,6 +1988,10 @@ button {
   .hero__inner {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
     gap: var(--space-20);
+  }
+
+  .hero__content {
+    max-width: 760px;
   }
 
   .hero__model-container {

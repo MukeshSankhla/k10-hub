@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ChevronDown } from 'lucide-react';
 import HeroBackground from './HeroBackground';
 
 // Lazy load the 3D model to avoid blocking initial page load
@@ -83,7 +83,7 @@ export default function Hero() {
               Explore Projects
               <ArrowRight size={15} aria-hidden="true" />
             </Link>
-            <Link to="/learn" className="btn btn--secondary" id="hero-cta-secondary">
+            <Link to="/tutorials" className="btn btn--secondary" id="hero-cta-secondary">
               Start Learning
             </Link>
           </div>
@@ -97,6 +97,16 @@ export default function Hero() {
         </div>
 
       </div>
+
+      {/* Scroll Down Indicator */}
+      <a
+        href="#featured-projects"
+        className="hero__scroll-indicator"
+        aria-label="Scroll to featured projects"
+      >
+        <span>FEATURED PROJECTS</span>
+        <ChevronDown size={13} className="hero__scroll-indicator-icon" aria-hidden="true" />
+      </a>
     </section>
   );
 }

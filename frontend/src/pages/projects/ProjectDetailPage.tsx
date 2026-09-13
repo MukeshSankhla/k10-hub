@@ -42,7 +42,7 @@ import {
   toggleFeaturedProject,
   resolveProjectAuthor,
 } from '../../services/projects/projectStorageService';
-import UserBadge from '../../components/common/UserBadge';
+import UserBadge, { isKnownAdmin } from '../../components/common/UserBadge';
 import { toast } from '../../contexts/ToastContext';
 
 export default function ProjectDetailPage() {
@@ -536,7 +536,9 @@ export default function ProjectDetailPage() {
                       <span style={{ fontSize: '13.5px', fontWeight: 600 }}>{authorInfo.name}</span>
                       <UserBadge
                         role={
-                          authorInfo.role?.toLowerCase().includes('admin')
+                          isKnownAdmin({ name: authorInfo.name, role: authorInfo.role })
+                            ? 'admin'
+                            : authorInfo.role?.toLowerCase().includes('admin')
                             ? 'admin'
                             : authorInfo.role?.toLowerCase().includes('author') || authorInfo.isCurrentUser
                             ? 'author'

@@ -15,7 +15,7 @@ import {
   getProjectCommentCount,
   subscribeCommunity,
 } from '../../services/community/communityService';
-import UserBadge from '../common/UserBadge';
+import UserBadge, { isKnownAdmin } from '../common/UserBadge';
 
 export function getLevelLabel(level: number | string | undefined): string {
   const num = Number(level);
@@ -348,7 +348,9 @@ export default function ProjectCard({ project, isCurrentAuthor }: ProjectCardPro
             </span>
             <UserBadge
               role={
-                authorInfo.role?.toLowerCase().includes('admin')
+                isKnownAdmin({ name: authorInfo.name, role: authorInfo.role })
+                  ? 'admin'
+                  : authorInfo.role?.toLowerCase().includes('admin')
                   ? 'admin'
                   : authorInfo.role?.toLowerCase().includes('author') || authorInfo.isCurrentUser
                   ? 'author'
