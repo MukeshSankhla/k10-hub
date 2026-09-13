@@ -145,9 +145,24 @@ export async function initDatabase(): Promise<void> {
     );
   `);
 
+  // Ensure user_key column exists on existing installations and backfill if null
+  try {
+    const tableInfo = await client.execute("PRAGMA table_info(users)");
+    const hasUserKey = tableInfo.rows.some((r: any) => r.name === 'user_key');
+    if (!hasUserKey) {
+      await client.execute("ALTER TABLE users ADD COLUMN user_key TEXT");
+      console.log('✅ Added missing user_key column to users table.');
+    }
+    // Backfill any existing users missing user_key
+    await client.execute("UPDATE users SET user_key = 'usr_' || lower(hex(randomblob(4))) WHERE user_key IS NULL");
+  } catch (userKeyErr) {
+    console.warn('user_key column check notice:', userKeyErr);
+  }
+
   await client.execute(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_key TEXT UNIQUE,
       supabase_uid TEXT NOT NULL UNIQUE,
       email TEXT NOT NULL UNIQUE,
       name TEXT NOT NULL,

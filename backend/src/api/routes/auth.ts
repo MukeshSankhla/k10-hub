@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { eq, desc, or, like, and } from 'drizzle-orm';
 import { db } from '../../config/database';
 import { users, authorApplications } from '../../db/schema';
-import { requireAuth, AuthRequest, syncOrProvisionUser } from '../../middleware/auth';
+import { requireAuth, AuthRequest, syncOrProvisionUser, generateUserKey } from '../../middleware/auth';
 import { projectService } from '../../services/ProjectService';
 import { getSupabaseClient } from '../../services/supabase';
 
@@ -91,6 +91,8 @@ router.post('/register', async (req: Request, res: Response) => {
         message: 'Authentication service not configured.',
       });
     }
+    const userKey = generateUserKey();
+
     const { data, error } = await supabase.auth.signUp({
       email: normalizedEmail,
       password,
@@ -98,6 +100,8 @@ router.post('/register', async (req: Request, res: Response) => {
         data: {
           name,
           full_name: name,
+          user_key: userKey,
+          userKey,
         },
       },
     });
@@ -118,11 +122,12 @@ router.post('/register', async (req: Request, res: Response) => {
 
     const isConfirmed = Boolean(data.user?.email_confirmed_at || (data.user as any)?.confirmed_at);
     if (data.user) {
-      // Sync into local database
+      // Sync into local database with unique userKey
       await syncOrProvisionUser({
         uid: data.user.id,
         email: normalizedEmail,
         name,
+        userKey,
         isEmailVerified: isConfirmed,
         emailConfirmedAt: isConfirmed ? Math.floor(Date.now() / 1000) : null,
       });
@@ -130,6 +135,7 @@ router.post('/register', async (req: Request, res: Response) => {
 
     return res.status(201).json({
       success: true,
+      userKey,
       confirmationRequired: !isConfirmed,
       message: isConfirmed
         ? 'Account created successfully.'
@@ -249,6 +255,7 @@ router.post('/verify-email', async (req: Request, res: Response) => {
       uid: data.user.id,
       email: normalizedEmail,
       name: data.user.user_metadata?.full_name || data.user.user_metadata?.name || normalizedEmail.split('@')[0],
+      userKey: data.user.user_metadata?.user_key || data.user.user_metadata?.userKey,
       isEmailVerified: true,
       emailConfirmedAt: now,
     });
@@ -297,6 +304,7 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: Response) => {
     return res.json({
       user: {
         id: dbUser.id,
+        userKey: dbUser.userKey || null,
         supabaseUid: dbUser.supabaseUid,
         email: dbUser.email,
         name: dbUser.name,
@@ -539,6 +547,7 @@ router.get('/profile/:identifier', async (req: Request, res: Response) => {
     if (!userRecord) {
       userRecord = await db.query.users.findFirst({
         where: or(
+          eq(users.userKey, clean),
           eq(users.supabaseUid, clean),
           eq(users.email, clean.toLowerCase()),
           like(users.name, `%${clean}%`)
@@ -550,6 +559,7 @@ router.get('/profile/:identifier', async (req: Request, res: Response) => {
       return res.json({
         user: {
           id: userRecord.id,
+          userKey: userRecord.userKey || null,
           name: userRecord.name,
           avatarUrl: userRecord.avatarUrl,
           bio: userRecord.bio || null,

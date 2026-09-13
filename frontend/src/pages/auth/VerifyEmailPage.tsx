@@ -1,26 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase, isSupabaseConfigured } from '../../services/supabase';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
-import { Mail, CheckCircle2, AlertCircle, ArrowRight, RefreshCw, ShieldCheck, KeyRound } from 'lucide-react';
+import { Mail, CheckCircle2, AlertCircle, ArrowRight, RefreshCw, ShieldCheck } from 'lucide-react';
 
 export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isEmailVerified, resendVerificationEmail, verifyEmailOtp, refreshProfile } = useAuth();
+  const { user, isEmailVerified, resendVerificationEmail, refreshProfile } = useAuth();
 
   const [email, setEmail] = useState<string>(() => {
     return searchParams.get('email') || user?.email || '';
   });
-  const [otpCode, setOtpCode] = useState('');
   const [status, setStatus] = useState<'verifying' | 'success' | 'awaiting' | 'error'>('awaiting');
   const [message, setMessage] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
   const [isResending, setIsResending] = useState(false);
-  const [isSubmittingOtp, setIsSubmittingOtp] = useState(false);
 
   // Cooldown countdown timer
   useEffect(() => {
@@ -137,30 +135,6 @@ export default function VerifyEmailPage() {
       setMessage(res.message || 'Verification email resent! Please check your inbox.');
     } else {
       setMessage(res.error || 'Failed to resend verification email.');
-    }
-  };
-
-  const handleOtpSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanOtp = otpCode.trim();
-    if (!cleanOtp) return;
-    if (!email.trim()) {
-      setMessage('Please enter the email address associated with your account.');
-      return;
-    }
-
-    setIsSubmittingOtp(true);
-    setMessage('');
-    const res = await verifyEmailOtp(email.trim(), cleanOtp, 'signup');
-    setIsSubmittingOtp(false);
-
-    if (res.success) {
-      setStatus('success');
-      setMessage('Your email has been verified successfully!');
-      await refreshProfile();
-    } else {
-      setStatus('error');
-      setMessage(res.error || 'Invalid verification code. Please check and try again.');
     }
   };
 
@@ -292,14 +266,14 @@ export default function VerifyEmailPage() {
                   {status === 'error' ? 'Verification Notice' : 'Verify Your Email'}
                 </h1>
 
-                <p style={{ color: 'var(--color-ink-secondary)', fontSize: 'var(--text-sm)', lineHeight: 1.6, marginBottom: 'var(--space-4)' }}>
+                <p style={{ color: 'var(--color-ink-secondary)', fontSize: 'var(--text-sm)', lineHeight: 1.6, marginBottom: 'var(--space-5)' }}>
                   {email ? (
                     <>
-                      We sent a verification link to <strong style={{ color: 'var(--color-ink-primary)' }}>{email}</strong>.
-                      Click the link in the email or enter your verification code below.
+                      We sent an activation link to <strong style={{ color: 'var(--color-ink-primary)' }}>{email}</strong>.
+                      Please check your inbox and click the link to activate your account.
                     </>
                   ) : (
-                    'Please verify your email address to unlock project publishing, bookmarks, and author applications.'
+                    'Please click the activation link sent to your email address to verify your account.'
                   )}
                 </p>
 
@@ -321,52 +295,6 @@ export default function VerifyEmailPage() {
                     <span>{message}</span>
                   </div>
                 )}
-
-                {/* Optional 6-digit OTP code entry */}
-                <form onSubmit={handleOtpSubmit} style={{ marginBottom: 'var(--space-6)', textAlign: 'left' }}>
-                  <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--color-ink-secondary)', marginBottom: 'var(--space-2)' }}>
-                    Have a 6-digit verification code?
-                  </label>
-                  <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-                    <div style={{ position: 'relative', flex: 1 }}>
-                      <KeyRound size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-ink-tertiary)' }} />
-                      <input
-                        type="text"
-                        value={otpCode}
-                        onChange={(e) => setOtpCode(e.target.value)}
-                        placeholder="e.g. 123456"
-                        maxLength={10}
-                        style={{
-                          width: '100%',
-                          padding: '0.65rem 0.75rem 0.65rem 2.4rem',
-                          backgroundColor: 'var(--color-paper)',
-                          border: '1px solid var(--color-border)',
-                          borderRadius: 'var(--radius-md)',
-                          fontSize: 'var(--text-sm)',
-                          color: 'var(--color-ink-primary)',
-                          letterSpacing: '0.1em',
-                        }}
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      disabled={isSubmittingOtp || otpCode.trim().length < 4}
-                      style={{
-                        padding: '0.65rem 1rem',
-                        backgroundColor: 'var(--color-ink-primary)',
-                        color: 'var(--color-paper)',
-                        border: 'none',
-                        borderRadius: 'var(--radius-md)',
-                        fontSize: 'var(--text-xs)',
-                        fontWeight: 600,
-                        cursor: isSubmittingOtp || otpCode.trim().length < 4 ? 'not-allowed' : 'pointer',
-                        opacity: isSubmittingOtp || otpCode.trim().length < 4 ? 0.6 : 1,
-                      }}
-                    >
-                      {isSubmittingOtp ? 'Checking...' : 'Verify'}
-                    </button>
-                  </div>
-                </form>
 
                 {/* Resend button */}
                 <div style={{

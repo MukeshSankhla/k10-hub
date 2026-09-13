@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { eq, or } from 'drizzle-orm';
+import crypto from 'crypto';
 import { db } from '../config/database';
 import { users } from '../db/schema';
 import { verifyAuthToken, VerifiedAuthUser } from '../services/supabase';
@@ -8,8 +9,16 @@ import { env } from '../config/env';
 export type UserRole = 'user' | 'author' | 'admin';
 export type UserStatus = 'active' | 'suspended';
 
+/**
+ * Generates an immutable, unique User ID key in format usr_xxxxxxxx (8 hex chars).
+ */
+export function generateUserKey(): string {
+  return `usr_${crypto.randomBytes(4).toString('hex')}`;
+}
+
 export interface DbUser {
   id: number;
+  userKey?: string | null;
   supabaseUid: string;
   email: string;
   name: string;
@@ -109,6 +118,9 @@ export async function syncOrProvisionUser(verified: VerifiedAuthUser): Promise<D
     const updateData: Record<string, any> = {
       lastSignInAt: now,
     };
+    if (!existing.userKey) {
+      updateData.userKey = verified.userKey || generateUserKey();
+    }
     if (verified.isEmailVerified && !existing.isEmailVerified) {
       updateData.isEmailVerified = true;
       updateData.emailConfirmedAt = verified.emailConfirmedAt || now;
@@ -126,11 +138,13 @@ export async function syncOrProvisionUser(verified: VerifiedAuthUser): Promise<D
 
   // Determine initial role (admin if configured in ADMIN_EMAILS, else user)
   const initialRole: UserRole = isAdminEmail ? 'admin' : 'user';
+  const assignedKey = verified.userKey || generateUserKey();
 
   try {
     const [inserted] = await db
       .insert(users)
       .values({
+        userKey: assignedKey,
         supabaseUid: verified.uid,
         email: normalizedEmail,
         name: (verified.name || normalizedEmail.split('@')[0] || 'Maker').trim().slice(0, 60),
@@ -155,11 +169,17 @@ export async function syncOrProvisionUser(verified: VerifiedAuthUser): Promise<D
     });
 
     if (fallback) {
+      const fbUpdate: Record<string, any> = { updatedAt: now };
       if (fallback.supabaseUid !== verified.uid) {
-        await db.update(users).set({ supabaseUid: verified.uid, updatedAt: now }).where(eq(users.id, fallback.id));
-        fallback.supabaseUid = verified.uid;
+        fbUpdate.supabaseUid = verified.uid;
       }
-      return fallback as DbUser;
+      if (!fallback.userKey) {
+        fbUpdate.userKey = assignedKey;
+      }
+      if (Object.keys(fbUpdate).length > 1 || fbUpdate.supabaseUid) {
+        await db.update(users).set(fbUpdate).where(eq(users.id, fallback.id));
+      }
+      return { ...fallback, ...fbUpdate } as DbUser;
     }
 
     throw insertErr;

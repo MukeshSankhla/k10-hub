@@ -33,6 +33,8 @@ import {
   AlertTriangle,
   Bookmark,
   Calendar,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { ProjectDetail } from '../../config/projectsData';
 import { toast } from '../../contexts/ToastContext';
@@ -126,6 +128,7 @@ export default function ProfilePage() {
     identifier &&
     (
       (profile?.id && String(profile.id).toLowerCase() === identifier.toLowerCase()) ||
+      (profile?.userKey && profile.userKey.toLowerCase() === identifier.toLowerCase()) ||
       (user?.id && String(user.id).toLowerCase() === identifier.toLowerCase()) ||
       (profile?.name && profile.name.toLowerCase() === identifier.toLowerCase()) ||
       (user?.user_metadata?.name && user.user_metadata.name.toLowerCase() === identifier.toLowerCase()) ||
@@ -136,6 +139,7 @@ export default function ProfilePage() {
 
   const isOwnProfile = !identifier || isSelf;
   const [publicUser, setPublicUser] = useState<any>(null);
+  const [copiedKey, setCopiedKey] = useState(false);
 
   useEffect(() => {
     if (!isOwnProfile && identifier) {
@@ -556,6 +560,9 @@ export default function ProfilePage() {
     : (publicUser?.name || publicSampleProject?.author || decodeURIComponent(identifier || 'Creator'));
 
   const displayEmail = isOwnProfile ? (profile?.email || user?.email || '') : '';
+  const displayUserKey = isOwnProfile
+    ? (profile?.userKey || user?.user_metadata?.user_key || user?.user_metadata?.userKey)
+    : (publicUser?.userKey || null);
   const avatarUrl = isOwnProfile
     ? (profile?.avatarUrl || user?.user_metadata?.avatar_url)
     : (publicUser?.avatarUrl || publicSampleProject?.authorAvatar);
@@ -763,6 +770,41 @@ export default function ProfilePage() {
                       )
                     )}
                   </div>
+
+                  {displayUserKey && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(displayUserKey);
+                          setCopiedKey(true);
+                          toast.success(`User ID ${displayUserKey} copied to clipboard!`);
+                          setTimeout(() => setCopiedKey(false), 1500);
+                        }}
+                        title="Unique immutable User ID — Click to copy"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          fontSize: '11px',
+                          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                          color: 'var(--color-ink-secondary)',
+                          backgroundColor: 'var(--color-paper)',
+                          border: '1px solid var(--color-border)',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          userSelect: 'all',
+                          lineHeight: 1.2,
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <span style={{ color: 'var(--color-accent)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>User ID:</span>
+                        <span>{displayUserKey}</span>
+                        {copiedKey ? <Check size={12} color="#16a34a" /> : <Copy size={12} />}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 

@@ -108,6 +108,7 @@ export const flashLogsRelations = relations(flashLogs, ({ one }) => ({
 // ─── Users ────────────────────────────────────────────────────────────────────
 export const users = sqliteTable('users', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  userKey: text('user_key').unique(),
   supabaseUid: text('supabase_uid').notNull().unique(),
   email: text('email').notNull().unique(),
   name: text('name').notNull(),

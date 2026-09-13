@@ -141,18 +141,6 @@ export default function LoginPage() {
                         >
                           {isResending ? 'Sending...' : 'Resend verification email'}
                         </button>
-                        <span style={{ opacity: 0.5 }}>|</span>
-                        <Link
-                          to={`/verify-email?email=${encodeURIComponent(unconfirmedEmail)}`}
-                          style={{
-                            color: 'var(--color-accent)',
-                            fontWeight: 700,
-                            textDecoration: 'underline',
-                            fontSize: 'var(--text-xs)',
-                          }}
-                        >
-                          Enter verification code &rarr;
-                        </Link>
                       </div>
                     )}
                     {resendStatus && (

@@ -818,7 +818,7 @@ export default function AdminDashboardPage() {
                   <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-ink-tertiary)' }} />
                   <input
                     type="text"
-                    placeholder="Search by name or email..."
+                    placeholder="Search by name, email, or user ID (usr_...)..."
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
@@ -925,6 +925,25 @@ export default function AdminDashboardPage() {
                                   <UserBadge role={u.role} size={15} />
                                 </div>
                                 <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-ink-secondary)' }}>{u.email}</div>
+                                {u.userKey && (
+                                  <div style={{ marginTop: '2px' }}>
+                                    <span
+                                      title="Unique immutable User ID"
+                                      style={{
+                                        fontFamily: 'monospace',
+                                        fontSize: '11px',
+                                        color: 'var(--color-ink-secondary)',
+                                        backgroundColor: 'var(--color-paper)',
+                                        padding: '1px 6px',
+                                        borderRadius: '4px',
+                                        border: '1px solid var(--color-border)',
+                                        display: 'inline-block',
+                                      }}
+                                    >
+                                      {u.userKey}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </td>

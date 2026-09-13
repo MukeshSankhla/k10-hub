@@ -107,6 +107,7 @@ export type UserStatus = 'active' | 'suspended';
 
 export interface UserProfile {
   id: number;
+  userKey?: string | null;
   supabaseUid: string;
   email: string;
   name: string;

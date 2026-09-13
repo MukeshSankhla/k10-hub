@@ -77,7 +77,8 @@ router.get('/users', async (req: AuthRequest, res: Response) => {
       conditions.push(
         or(
           like(users.name, `%${escapedSearch}%`),
-          like(users.email, `%${escapedSearch}%`)
+          like(users.email, `%${escapedSearch}%`),
+          like(users.userKey, `%${escapedSearch}%`)
         )
       );
     }

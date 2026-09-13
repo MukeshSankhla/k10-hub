@@ -29,6 +29,7 @@ export function getSupabaseClient(): SupabaseClient | null {
 
 export interface VerifiedAuthUser {
   uid: string;
+  userKey?: string;
   email: string;
   name?: string;
   avatarUrl?: string;
@@ -81,10 +82,12 @@ export async function verifyAuthToken(token: string): Promise<{ user: VerifiedAu
     const confirmedStr = sbUser.email_confirmed_at || (sbUser as any).confirmed_at;
     const emailConfirmedAt = confirmedStr ? Math.floor(new Date(confirmedStr).getTime() / 1000) : null;
     const isEmailVerified = Boolean(confirmedStr);
+    const userKey = metadata.user_key || metadata.userKey || undefined;
 
     return {
       user: {
         uid: sbUser.id,
+        userKey,
         email: sbUser.email || '',
         name,
         avatarUrl,
