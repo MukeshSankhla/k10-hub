@@ -249,8 +249,8 @@ export default function ProjectCard({ project, isCurrentAuthor }: ProjectCardPro
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'scale(1)';
             }}
-            title={isLiked ? 'Unlike this project' : 'Like this project'}
-            aria-label={isLiked ? 'Unlike this project' : 'Like this project'}
+            title={isLiked ? (likeCount > 0 ? `Unlike (${likeCount})` : 'Unlike this project') : (likeCount > 0 ? `Like (${likeCount})` : 'Like this project')}
+            aria-label={isLiked ? (likeCount > 0 ? `Unlike (${likeCount})` : 'Unlike this project') : (likeCount > 0 ? `Like (${likeCount})` : 'Like this project')}
           >
             <Heart size={14} fill={isLiked ? '#fff' : 'none'} />
           </button>
@@ -445,43 +445,6 @@ export default function ProjectCard({ project, isCurrentAuthor }: ProjectCardPro
               <Zap size={11} fill="currentColor" />
               <span>{flashes}</span>
             </span>
-
-            {/* Likes */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const currentUserId = user?.id || profile?.id;
-                if (!currentUserId) {
-                  toast.warning('Please sign in to like projects.', 'Sign In Required');
-                  return;
-                }
-                try {
-                  const res = toggleProjectLike(project.id, String(currentUserId));
-                  setIsLiked(res.liked);
-                  setLikeCount(res.count);
-                } catch (err: any) {
-                  toast.warning(err.message || 'Please sign in to like projects.');
-                }
-              }}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '3px',
-                fontSize: '11px',
-                fontWeight: 600,
-                color: isLiked ? '#ef4444' : 'var(--color-ink-tertiary)',
-                background: 'none',
-                border: 'none',
-                padding: 0,
-                cursor: 'pointer',
-              }}
-              title={isLiked ? 'Unlike' : 'Like'}
-            >
-              <Heart size={12} fill={isLiked ? '#ef4444' : 'none'} color={isLiked ? '#ef4444' : 'currentColor'} />
-              <span>{likeCount}</span>
-            </button>
 
             {/* Comments */}
             <Link

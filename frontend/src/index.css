@@ -2327,8 +2327,49 @@ button {
   max-width: 100%;
   height: auto;
   border-radius: var(--radius-md);
-  display: inline-block;
+  display: block;
+  margin: 1.5rem 0;
   vertical-align: middle;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.k10-markdown-body a > img {
+  display: block;
+  margin: 1.5rem 0;
+}
+
+.k10-markdown-body a:has(> img) {
+  display: block;
+  margin: 1.5rem 0;
+}
+
+.k10-markdown-body a:has(> img) > img {
+  margin: 0;
+}
+
+.k10-markdown-body p:has(> img) {
+  margin-bottom: 1.5rem;
+}
+
+.k10-markdown-body p:has(> img) > br {
+  display: none;
+}
+
+.k10-markdown-body img + img,
+.k10-markdown-body img + br + img,
+.k10-markdown-body br + img {
+  margin-top: 1.5rem;
+}
+
+/* Badges and inline status chips override */
+.k10-markdown-body img[src*="shields.io"],
+.k10-markdown-body img[src*="badge"],
+.k10-markdown-body a:has(img[src*="shields.io"]) img,
+.k10-markdown-body a:has(img[src*="badge"]) img {
+  display: inline-block;
+  margin: 3px 4px;
+  vertical-align: middle;
+  box-shadow: none;
 }
 
 /* Horizontal Rule */
