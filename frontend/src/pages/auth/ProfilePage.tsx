@@ -227,25 +227,45 @@ export default function ProfilePage() {
     if (tabParam === 'draft') return 'draft';
     if (tabParam === 'review' || tabParam === 'pending_approval') return 'pending_approval';
     if (tabParam === 'published') return 'published';
-    if (tabParam === 'bookmarked' || tabParam === 'bookmarks' || tabParam === 'saved') return 'bookmarked';
+    if (tabParam === 'bookmarked' || tabParam === 'bookmarks' || tabParam === 'saved') {
+      return bookmarkedProjects.length > 0 ? 'bookmarked' : 'published';
+    }
     if (location.hash === '#draft' || location.hash === '#drafts') return 'draft';
     if (location.hash === '#review') return 'pending_approval';
-    if (location.hash === '#bookmarks' || location.hash === '#saved') return 'bookmarked';
-    if (role === 'user' && isOwnProfile) return 'bookmarked';
+    if (location.hash === '#bookmarks' || location.hash === '#saved') {
+      return bookmarkedProjects.length > 0 ? 'bookmarked' : 'published';
+    }
+    if (role === 'user' && isOwnProfile) {
+      return bookmarkedProjects.length > 0 ? 'bookmarked' : 'published';
+    }
     return 'published';
   };
 
   const [projectStatusFilter, setProjectStatusFilter] = useState<'published' | 'draft' | 'pending_approval' | 'bookmarked'>(resolveInitialTab);
 
-  // Default tab to bookmarked for regular users
+  // Default tab to bookmarked for regular users if they have bookmarks
   useEffect(() => {
-    if (role === 'user' && isOwnProfile && projectStatusFilter !== 'bookmarked') {
+    if (role === 'user' && isOwnProfile && projectStatusFilter !== 'bookmarked' && bookmarkedProjects.length > 0) {
       const tabParam = searchParams.get('tab');
       if (!tabParam || tabParam === 'published') {
         setProjectStatusFilter('bookmarked');
       }
     }
-  }, [role, isOwnProfile, searchParams]);
+  }, [role, isOwnProfile, searchParams, bookmarkedProjects.length]);
+
+  // If there are no bookmarks and current tab is bookmarked, revert to published
+  useEffect(() => {
+    if (projectStatusFilter === 'bookmarked' && bookmarkedProjects.length === 0) {
+      setProjectStatusFilter('published');
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        if (next.get('tab') === 'bookmarked' || next.get('tab') === 'bookmarks' || next.get('tab') === 'saved') {
+          next.delete('tab');
+        }
+        return next;
+      }, { replace: true });
+    }
+  }, [projectStatusFilter, bookmarkedProjects.length, setSearchParams]);
 
   // Sync tab with URL search parameter or hash
   useEffect(() => {
@@ -257,15 +277,23 @@ export default function ProfilePage() {
     } else if (tabParam === 'published') {
       setProjectStatusFilter('published');
     } else if (tabParam === 'bookmarked' || tabParam === 'bookmarks' || tabParam === 'saved') {
-      setProjectStatusFilter('bookmarked');
+      if (bookmarkedProjects.length > 0) {
+        setProjectStatusFilter('bookmarked');
+      } else {
+        setProjectStatusFilter('published');
+      }
     } else if (location.hash === '#draft' || location.hash === '#drafts') {
       setProjectStatusFilter('draft');
     } else if (location.hash === '#review') {
       setProjectStatusFilter('pending_approval');
     } else if (location.hash === '#bookmarks' || location.hash === '#saved') {
-      setProjectStatusFilter('bookmarked');
+      if (bookmarkedProjects.length > 0) {
+        setProjectStatusFilter('bookmarked');
+      } else {
+        setProjectStatusFilter('published');
+      }
     }
-  }, [searchParams, location.hash]);
+  }, [searchParams, location.hash, bookmarkedProjects.length]);
 
   const handleSelectTab = (tabId: 'published' | 'draft' | 'pending_approval' | 'bookmarked') => {
     setProjectStatusFilter(tabId);
@@ -1007,7 +1035,7 @@ export default function ProfilePage() {
           )}
 
           {/* Section: Contributed Projects & Bookmarks (All users see Bookmarks; Authors/Admins see Full Studio) */}
-          {(isOwnProfile || (!isOwnProfile && publicAuthorProjects.length > 0)) && (
+          {((isOwnProfile ? (role === 'user' ? bookmarkedProjects.length > 0 : true) : publicAuthorProjects.length > 0)) && (
             <div
               id="contributed-projects"
               style={{
@@ -1082,12 +1110,12 @@ export default function ProfilePage() {
                     }}
                   >
                     {(role === 'user'
-                      ? [{ id: 'bookmarked', label: 'Bookmarks', count: bookmarkedProjects.length }]
+                      ? (bookmarkedProjects.length > 0 ? [{ id: 'bookmarked', label: 'Bookmarks', count: bookmarkedProjects.length }] : [])
                       : [
                           { id: 'published', label: 'Published', count: projectsList.filter(p => p.status === 'published' || !p.status).length },
                           { id: 'draft', label: 'Draft', count: projectsList.filter(p => p.status === 'draft').length },
                           { id: 'pending_approval', label: 'Review', count: projectsList.filter(p => p.status === 'pending_approval').length },
-                          { id: 'bookmarked', label: 'Bookmarks', count: bookmarkedProjects.length },
+                          ...(bookmarkedProjects.length > 0 ? [{ id: 'bookmarked', label: 'Bookmarks', count: bookmarkedProjects.length }] : []),
                         ]
                     ).map((tab) => {
                       const isActive = projectStatusFilter === tab.id;
@@ -1430,10 +1458,7 @@ export default function ProfilePage() {
                             <Calendar size={12} style={{ opacity: 0.7 }} />
                             {project.publishDate || 'Recent'}
                           </span>
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--color-accent)', fontWeight: 600 }}>
-                            <Zap size={11} />
-                            <ProjectFlashCount projectId={project.id} initialCount={project.flashCount} />
-                          </div>
+                          <ProjectFlashCount projectId={project.id} initialCount={project.flashCount} />
                         </div>
                       </div>
 

@@ -147,7 +147,7 @@ export default function ProjectCard({ project, isCurrentAuthor }: ProjectCardPro
             {getLevelLabel(project.level)}
           </div>
 
-          {/* Bottom-Right Bookmark Button (Separated from top-right diagonal indicator ribbon) */}
+          {/* Bottom-Left Bookmark Button */}
           <button
             type="button"
             onClick={(e) => {
@@ -174,7 +174,7 @@ export default function ProjectCard({ project, isCurrentAuthor }: ProjectCardPro
             style={{
               position: 'absolute',
               bottom: 10,
-              right: 10,
+              left: 10,
               zIndex: 3,
               backgroundColor: isBookmarked ? 'var(--color-accent)' : 'rgba(0, 0, 0, 0.65)',
               backdropFilter: 'blur(4px)',
@@ -190,18 +190,78 @@ export default function ProjectCard({ project, isCurrentAuthor }: ProjectCardPro
               transition: 'all 0.15s ease',
               boxShadow: '0 2px 6px rgba(0, 0, 0, 0.3)',
             }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
             title={isBookmarked ? 'Remove from bookmarks' : 'Bookmark this project'}
+            aria-label={isBookmarked ? 'Remove from bookmarks' : 'Bookmark this project'}
           >
             <Bookmark size={14} fill={isBookmarked ? '#fff' : 'none'} />
           </button>
 
-          {/* Featured Pill if marked as featured */}
+          {/* Bottom-Right Like Button (Same style as bookmark) */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const currentUserId = user?.id || profile?.id;
+              if (!currentUserId) {
+                toast.warning('Please sign in to like projects.', 'Sign In Required');
+                return;
+              }
+              try {
+                const res = toggleProjectLike(project.id, String(currentUserId));
+                setIsLiked(res.liked);
+                setLikeCount(res.count);
+                if (res.liked) {
+                  toast.success('Liked project!', 'Success');
+                }
+              } catch (err: any) {
+                toast.warning(err.message || 'Please sign in to like projects.');
+              }
+            }}
+            style={{
+              position: 'absolute',
+              bottom: 10,
+              right: 10,
+              zIndex: 3,
+              backgroundColor: isLiked ? '#ef4444' : 'rgba(0, 0, 0, 0.65)',
+              backdropFilter: 'blur(4px)',
+              border: isLiked ? 'none' : '1px solid rgba(255, 255, 255, 0.25)',
+              color: '#fff',
+              borderRadius: '6px',
+              width: 28,
+              height: 28,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.3)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            title={isLiked ? 'Unlike this project' : 'Like this project'}
+            aria-label={isLiked ? 'Unlike this project' : 'Like this project'}
+          >
+            <Heart size={14} fill={isLiked ? '#fff' : 'none'} />
+          </button>
+
+          {/* Featured Pill if marked as featured (offset to avoid overlapping bottom-left bookmark) */}
           {isFeatured && (
             <div
               style={{
                 position: 'absolute',
                 bottom: 10,
-                left: 10,
+                left: 44,
                 backgroundColor: 'rgba(245, 158, 11, 0.95)',
                 backdropFilter: 'blur(4px)',
                 color: '#fff',

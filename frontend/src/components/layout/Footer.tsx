@@ -86,11 +86,6 @@ export default function Footer() {
             <p className="footer__brand-tagline">
               The open project and firmware platform for the UNIHIKER K10. Discover beginner-friendly builds, author tutorials, and flash firmware directly from your browser.
             </p>
-
-            <div className="footer__status-badge" aria-label="System status: Web Serial Flashing Active">
-              <span className="footer__status-dot" aria-hidden="true" />
-              <span>Web Serial Flashing Active</span>
-            </div>
           </div>
 
           {/* Column 2: Platform */}
