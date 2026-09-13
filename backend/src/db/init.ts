@@ -145,20 +145,6 @@ export async function initDatabase(): Promise<void> {
     );
   `);
 
-  // Ensure user_key column exists on existing installations and backfill if null
-  try {
-    const tableInfo = await client.execute("PRAGMA table_info(users)");
-    const hasUserKey = tableInfo.rows.some((r: any) => r.name === 'user_key');
-    if (!hasUserKey) {
-      await client.execute("ALTER TABLE users ADD COLUMN user_key TEXT");
-      console.log('✅ Added missing user_key column to users table.');
-    }
-    // Backfill any existing users missing user_key
-    await client.execute("UPDATE users SET user_key = 'usr_' || lower(hex(randomblob(4))) WHERE user_key IS NULL");
-  } catch (userKeyErr) {
-    console.warn('user_key column check notice:', userKeyErr);
-  }
-
   await client.execute(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -184,6 +170,42 @@ export async function initDatabase(): Promise<void> {
       last_sign_in_at INTEGER
     );
   `);
+
+  // Ensure user_key column exists on existing installations and backfill if null
+  try {
+    let hasUserKey = false;
+    try {
+      const tableInfo = await client.execute("PRAGMA table_info(users)");
+      hasUserKey = tableInfo.rows.some((r: any) => {
+        if (!r) return false;
+        return r.name === 'user_key' || r[1] === 'user_key' || r.NAME === 'user_key';
+      });
+    } catch {
+      hasUserKey = false;
+    }
+
+    if (!hasUserKey) {
+      try {
+        await client.execute("ALTER TABLE users ADD COLUMN user_key TEXT");
+        console.log('✅ Added missing user_key column to users table.');
+      } catch (alterErr: any) {
+        const msg = String(alterErr?.message || alterErr || '').toLowerCase();
+        if (!msg.includes('duplicate column')) {
+          console.warn('ALTER TABLE notice:', alterErr);
+        }
+      }
+    }
+
+    // Backfill any existing users missing user_key
+    try {
+      await client.execute("UPDATE users SET user_key = 'usr_' || lower(hex(randomblob(4))) WHERE user_key IS NULL");
+      await client.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_user_key ON users(user_key)");
+    } catch (backfillErr) {
+      console.warn('user_key backfill notice:', backfillErr);
+    }
+  } catch (userKeyErr) {
+    console.warn('user_key column check notice:', userKeyErr);
+  }
 
   await client.execute(`
     CREATE TABLE IF NOT EXISTS author_applications (
