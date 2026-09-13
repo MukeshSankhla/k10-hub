@@ -47,7 +47,11 @@ const updateProfileSchema = z.object({
 
 const registerSchema = z.object({
   email: z.string().email('Invalid email address').max(255),
-  password: z.string().min(8, 'Password must be at least 8 characters').max(72),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(72)
+    .regex(/^(?=.*[A-Za-z])(?=.*\d)/, 'Password must contain both letters and numbers'),
   name: z.string().min(2, 'Name must be at least 2 characters').max(60),
 });
 
@@ -91,7 +95,10 @@ router.post('/register', async (req: Request, res: Response) => {
       email: normalizedEmail,
       password,
       options: {
-        data: { name },
+        data: {
+          name,
+          full_name: name,
+        },
       },
     });
 
@@ -360,6 +367,28 @@ router.patch('/profile', requireAuth, async (req: AuthRequest, res: Response) =>
     if (data.linkedinUrl !== undefined) updates.linkedinUrl = data.linkedinUrl || null;
 
     await db.update(users).set(updates).where(eq(users.id, user.id));
+
+    // Synchronize name and avatar updates into Supabase Auth user_metadata
+    if (user.supabaseUid && (data.name !== undefined || data.avatarUrl !== undefined)) {
+      const supabase = getSupabaseClient();
+      if (supabase && (supabase.auth as any).admin) {
+        try {
+          const sbMetadata: Record<string, any> = {};
+          if (data.name !== undefined) {
+            sbMetadata.name = data.name;
+            sbMetadata.full_name = data.name;
+          }
+          if (data.avatarUrl !== undefined) {
+            sbMetadata.avatar_url = data.avatarUrl || null;
+          }
+          await (supabase.auth as any).admin.updateUserById(user.supabaseUid, {
+            user_metadata: sbMetadata,
+          });
+        } catch (sbErr) {
+          console.warn('Could not sync profile update to Supabase Auth metadata:', sbErr);
+        }
+      }
+    }
 
     const updatedUser = await db.query.users.findFirst({
       where: eq(users.id, user.id),

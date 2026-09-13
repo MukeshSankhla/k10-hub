@@ -113,10 +113,10 @@ export async function syncOrProvisionUser(verified: VerifiedAuthUser): Promise<D
       updateData.isEmailVerified = true;
       updateData.emailConfirmedAt = verified.emailConfirmedAt || now;
     }
-    if (verified.name && (!existing.name || existing.name === 'Maker' || existing.name.startsWith('user_'))) {
+    if (verified.name && verified.name.trim() && verified.name.trim() !== existing.name) {
       updateData.name = verified.name.trim().slice(0, 60);
     }
-    if (verified.avatarUrl && !existing.avatarUrl) {
+    if (verified.avatarUrl && verified.avatarUrl !== existing.avatarUrl) {
       updateData.avatarUrl = verified.avatarUrl;
     }
 

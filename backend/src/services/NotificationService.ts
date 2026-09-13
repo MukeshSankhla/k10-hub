@@ -18,7 +18,7 @@ export interface BroadcastNotificationParams {
   title: string;
   message: string;
   url?: string;
-  target: 'all' | 'users' | 'authors' | 'specific';
+  target?: 'all' | 'users' | 'authors' | 'specific';
   targetUserIds?: number[];
 }
 
@@ -224,7 +224,7 @@ export class NotificationService {
     await this.createNotification({
       userId: authorUser.id,
       type: 'milestone_flash',
-      title: `⚡ Flash Milestone: ${newCount} Flashes!`,
+      title: `Flash Milestone: ${newCount} Flashes`,
       message: `Congratulations! Your project "${project.title}" just crossed ${newCount} successful flashes on UNIHIKER K10 hardware.`,
       icon: 'trophy',
       url: `/project/${project.id}`,
@@ -247,7 +247,7 @@ export class NotificationService {
     await this.createNotification({
       userId: authorUser.id,
       type: 'project_like',
-      title: `❤️ New Like on "${project.title}"`,
+      title: `New Like on "${project.title}"`,
       message: `${likerUser.name} liked your project.`,
       icon: 'heart',
       url: `/project/${project.id}`,
@@ -270,7 +270,7 @@ export class NotificationService {
     await this.createNotification({
       userId: authorUser.id,
       type: 'project_comment',
-      title: `💬 New Comment on "${project.title}"`,
+      title: `New Comment on "${project.title}"`,
       message: `${commenterUser.name} wrote: "${truncate(comment.content, 70)}"`,
       icon: 'message-square',
       url: `/project/${project.id}#comment-${comment.id}`,
@@ -312,7 +312,7 @@ export class NotificationService {
     await this.createNotification({
       userId: parentAuthorUser.id,
       type: 'comment_reply',
-      title: `↩️ Reply to your comment`,
+      title: `Reply to your comment`,
       message: `${replierUser.name} replied to your comment on "${projectTitle}": "${truncate(reply.content, 70)}"`,
       icon: 'corner-down-right',
       url: `/project/${projectId}#comment-${reply.id}`,
@@ -333,8 +333,8 @@ export class NotificationService {
       await this.createNotification({
         userId: app.userId,
         type: 'author_application',
-        title: `🎉 Author Application Approved!`,
-        message: `Congratulations! Your application to become a verified K10 Author has been approved. You now have publishing privileges!`,
+        title: `Author Application Approved`,
+        message: `Congratulations! Your application to become a verified K10 Author has been approved. You now have publishing privileges.`,
         icon: 'award',
         url: `/profile`,
         data: { applicationId: app.id, status: 'approved' },
@@ -369,8 +369,8 @@ export class NotificationService {
     await this.createNotification({
       userId: authorUser.id,
       type: 'project_approval',
-      title: `🚀 Project Published & Approved!`,
-      message: `Your project "${project.title}" has been verified by the editorial team and is now live in the public catalog!`,
+      title: `Project Published & Approved`,
+      message: `Your project "${project.title}" has been verified by the editorial team and is now live in the public catalog.`,
       icon: 'check-circle',
       url: `/project/${project.id}`,
       data: { projectId: project.id },

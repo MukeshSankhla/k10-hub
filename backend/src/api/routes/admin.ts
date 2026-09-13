@@ -2,10 +2,11 @@ import { Router, Response } from 'express';
 import { z } from 'zod';
 import { eq, desc, and, like, or, sql, count } from 'drizzle-orm';
 import { db } from '../../config/database';
-import { users, authorApplications, projects } from '../../db/schema';
+import { users, authorApplications, projects, notifications, comments, projectLikes, projectBookmarks, flashLogs } from '../../db/schema';
 import { requireAdmin, AuthRequest } from '../../middleware/auth';
 import { env } from '../../config/env';
 import { notificationService } from '../../services/NotificationService';
+import { getSupabaseClient } from '../../services/supabase';
 
 const router = Router();
 
@@ -244,12 +245,143 @@ router.patch('/users/:id/status', async (req: AuthRequest, res: Response) => {
       })
       .where(eq(users.id, targetUserId));
 
+    // Synchronize suspension status to Supabase Auth ban
+    if (targetUser.supabaseUid) {
+      const supabase = getSupabaseClient();
+      if (supabase && (supabase.auth as any).admin) {
+        try {
+          await (supabase.auth as any).admin.updateUserById(targetUser.supabaseUid, {
+            ban_duration: parseResult.data.status === 'suspended' ? '876600h' : 'none',
+          });
+        } catch (sbErr) {
+          console.warn(`Could not sync ban status for user ${targetUser.supabaseUid} to Supabase:`, sbErr);
+        }
+      }
+    }
+
     return res.json({
       success: true,
       message: `User status changed to ${parseResult.data.status}`,
     });
   } catch (error: any) {
     return res.status(500).json({ error: 'STATUS_UPDATE_ERROR', message: error.message });
+  }
+});
+
+/**
+ * DELETE /api/admin/users/:id
+ * Permanently delete user from everywhere:
+ * - Supabase Auth (removes user auth account and revokes active sessions)
+ * - SQLite Database (cascades notifications, applications, comments, bookmarks, likes, flash logs, projects, and user)
+ */
+router.delete('/users/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    const targetUserId = parseInt(req.params.id);
+    if (isNaN(targetUserId) || targetUserId <= 0) {
+      return res.status(400).json({ error: 'INVALID_ID', message: 'Invalid user ID' });
+    }
+
+    if (req.user?.id === targetUserId) {
+      return res.status(400).json({
+        error: 'SELF_DELETION',
+        message: 'Administrators cannot delete their own account.',
+      });
+    }
+
+    const targetUser = await db.query.users.findFirst({
+      where: eq(users.id, targetUserId),
+    });
+
+    if (!targetUser) {
+      return res.status(404).json({ error: 'NOT_FOUND', message: 'User not found' });
+    }
+
+    // Protect primary configured system admins against deletion
+    const adminList = env.ADMIN_EMAILS.split(',').map((e) => e.trim().toLowerCase());
+    if (adminList.includes(targetUser.email.toLowerCase())) {
+      return res.status(400).json({
+        error: 'PROTECTED_ADMIN',
+        message: 'System administrators configured in ADMIN_EMAILS cannot be deleted.',
+      });
+    }
+
+    const uidStr = String(targetUserId);
+    const sbUid = targetUser.supabaseUid;
+    const userEmail = targetUser.email.toLowerCase();
+
+    // 1. Delete from Supabase Auth
+    if (sbUid) {
+      const supabase = getSupabaseClient();
+      if (supabase && (supabase.auth as any).admin) {
+        try {
+          await (supabase.auth as any).admin.deleteUser(sbUid);
+        } catch (sbErr) {
+          console.warn(`Could not delete user ${sbUid} from Supabase Auth:`, sbErr);
+        }
+      }
+    }
+
+    // 2. Cascade delete from local database tables
+    // Remove notifications for this user
+    await db.delete(notifications).where(eq(notifications.userId, targetUserId));
+
+    // Remove or reassign author applications
+    await db.delete(authorApplications).where(eq(authorApplications.userId, targetUserId));
+    await db.update(authorApplications).set({ reviewedBy: null }).where(eq(authorApplications.reviewedBy, targetUserId));
+
+    // Remove user bookmarks
+    await db.delete(projectBookmarks).where(
+      or(
+        eq(projectBookmarks.userId, uidStr),
+        eq(projectBookmarks.userId, sbUid)
+      )
+    );
+
+    // Remove user likes
+    await db.delete(projectLikes).where(
+      or(
+        eq(projectLikes.userId, uidStr),
+        eq(projectLikes.userId, sbUid),
+        eq(projectLikes.userEmail, userEmail)
+      )
+    );
+
+    // Remove user flash logs
+    await db.delete(flashLogs).where(
+      or(
+        eq(flashLogs.userId, uidStr),
+        eq(flashLogs.userId, sbUid)
+      )
+    );
+
+    // Remove user comments
+    await db.delete(comments).where(
+      or(
+        eq(comments.authorId, uidStr),
+        eq(comments.authorId, sbUid),
+        eq(comments.authorEmail, userEmail)
+      )
+    );
+
+    // Delete projects authored by this user
+    await db.delete(projects).where(
+      or(
+        eq(projects.authorId, uidStr),
+        eq(projects.authorId, sbUid),
+        eq(projects.authorEmail, userEmail)
+      )
+    );
+
+    // Finally, remove the user record
+    await db.delete(users).where(eq(users.id, targetUserId));
+
+    return res.json({
+      success: true,
+      message: `User "${targetUser.name}" (${targetUser.email}) and all associated records were permanently deleted.`,
+    });
+  } catch (error: any) {
+    console.error('Error deleting user:', error);
+    return res.status(500).json({ error: 'USER_DELETE_ERROR', message: error.message || 'Failed to delete user' });
   }
 });
 

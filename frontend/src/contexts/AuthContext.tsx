@@ -364,9 +364,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Update user profile
   const updateProfile = async (data: Parameters<typeof api.auth.updateProfile>[0]) => {
     try {
+      // 1. Sync metadata directly to Supabase Auth so user_metadata is updated in Supabase
+      if (isSupabaseConfigured && supabase && user) {
+        try {
+          const clientMetadataUpdates: Record<string, any> = {};
+          if (data.name !== undefined && data.name.trim()) {
+            clientMetadataUpdates.name = data.name.trim();
+            clientMetadataUpdates.full_name = data.name.trim();
+          }
+          if (data.avatarUrl !== undefined) {
+            clientMetadataUpdates.avatar_url = data.avatarUrl;
+          }
+          if (Object.keys(clientMetadataUpdates).length > 0) {
+            const { data: sbData, error: sbErr } = await supabase.auth.updateUser({
+              data: clientMetadataUpdates,
+            });
+            if (!sbErr && sbData?.user) {
+              setUser(sbData.user);
+            }
+          }
+        } catch (sbClientErr) {
+          console.warn('Could not sync user update directly to Supabase client:', sbClientErr);
+        }
+      }
+
+      // 2. Persist profile update to backend
       const res = await api.auth.updateProfile(data);
       setProfile(res.user);
       if (res.user) {
+        setUser((prev: any) => prev ? {
+          ...prev,
+          user_metadata: {
+            ...(prev.user_metadata || {}),
+            name: res.user.name,
+            full_name: res.user.name,
+            avatar_url: res.user.avatarUrl || prev?.user_metadata?.avatar_url,
+          },
+        } : null);
+
         syncAuthorProfileAcrossProjects(
           {
             id: res.user.id,

@@ -15,7 +15,7 @@ import {
 } from '../../services/projects/projectStorageService';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from '../../contexts/ToastContext';
-import UserBadge from '../../components/common/UserBadge';
+import UserBadge, { ADMIN_EMAILS } from '../../components/common/UserBadge';
 import {
   Users,
   Shield,
@@ -406,6 +406,44 @@ export default function AdminDashboardPage() {
     } catch (err: any) {
       setActionMessage({ type: 'error', text: err.message || 'Failed to update user status' });
     }
+  };
+
+  // Permanently delete user handler with modal confirmation
+  const handleDeleteUser = (targetUser: UserProfile) => {
+    const isSelf =
+      (profile && profile.id === targetUser.id) ||
+      (user && String(user.id) === String(targetUser.id)) ||
+      (user && user.email?.toLowerCase() === targetUser.email.toLowerCase());
+    if (isSelf) {
+      toast.error('You cannot delete your own administrator account.');
+      return;
+    }
+
+    if (ADMIN_EMAILS.includes(targetUser.email.toLowerCase())) {
+      toast.error('Primary system administrators configured in ADMIN_EMAILS cannot be deleted.');
+      return;
+    }
+
+    toast.confirm({
+      title: 'Permanently Delete User',
+      message: `Are you sure you want to permanently delete "${targetUser.name}" (${targetUser.email})? This will delete their authentication account, profile, comments, bookmarks, likes, flash logs, and authored projects. This action cannot be undone.`,
+      confirmLabel: 'Delete Permanently',
+      cancelLabel: 'Cancel',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          const res = await api.admin.deleteUser(targetUser.id);
+          toast.success(res.message || `User "${targetUser.name}" deleted successfully.`);
+          setActionMessage({ type: 'success', text: res.message });
+          loadUsers();
+          loadStats();
+        } catch (err: any) {
+          toast.error(err.message || 'Failed to delete user');
+          setActionMessage({ type: 'error', text: err.message || 'Failed to delete user' });
+          loadUsers();
+        }
+      },
+    });
   };
 
   // Approve author application
@@ -940,7 +978,7 @@ export default function AdminDashboardPage() {
 
                           {/* Actions */}
                           <td style={{ padding: 'var(--space-3)' }}>
-                            <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                               {u.status === 'active' ? (
                                 <button
                                   type="button"
@@ -962,6 +1000,37 @@ export default function AdminDashboardPage() {
                                   Reactivate
                                 </button>
                               )}
+
+                              {/* Permanent Delete User button */}
+                              {(() => {
+                                const isSelf =
+                                  (profile && profile.id === u.id) ||
+                                  (user && String(user.id) === String(u.id)) ||
+                                  (user && user.email?.toLowerCase() === u.email.toLowerCase());
+                                const isProtectedAdmin = ADMIN_EMAILS.includes(u.email.toLowerCase());
+                                if (isSelf || isProtectedAdmin) return null;
+
+                                return (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteUser(u)}
+                                    className="btn btn--ghost btn--sm"
+                                    style={{
+                                      color: 'rgb(239, 68, 68)',
+                                      fontSize: 'var(--text-xs)',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px',
+                                      padding: '4px 8px',
+                                      borderColor: 'rgba(239, 68, 68, 0.25)',
+                                    }}
+                                    title={`Delete ${u.name} from everywhere`}
+                                  >
+                                    <Trash2 size={13} aria-hidden="true" />
+                                    <span>Delete</span>
+                                  </button>
+                                );
+                              })()}
                             </div>
                           </td>
                         </tr>

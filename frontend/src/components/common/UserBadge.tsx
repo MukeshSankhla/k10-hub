@@ -9,6 +9,12 @@ interface UserBadgeProps {
   style?: React.CSSProperties;
 }
 
+export const ADMIN_EMAILS = [
+  'mukeshdiy1@gmail.com',
+  'admin@k10hub.io',
+  'mukesh@makerbrains.com',
+];
+
 /**
  * Checks whether an author identifier (name, email, role, or ID) belongs to a platform Administrator.
  */
@@ -23,11 +29,7 @@ export function isKnownAdmin(identifier?: {
   if (role.includes('admin')) return true;
 
   const email = (identifier.email || '').trim().toLowerCase();
-  if (
-    email === 'mukeshdiy1@gmail.com' ||
-    email === 'admin@k10hub.io' ||
-    email === 'mukesh@makerbrains.com'
-  ) {
+  if (ADMIN_EMAILS.includes(email)) {
     return true;
   }
 

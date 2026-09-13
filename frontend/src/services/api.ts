@@ -336,6 +336,10 @@ export const api = {
         method: 'PATCH',
         body: JSON.stringify({ status }),
       }),
+    deleteUser: (id: number) =>
+      request<{ success: boolean; message: string }>(`/admin/users/${id}`, {
+        method: 'DELETE',
+      }),
     getAuthorApplications: (status?: string) => {
       const qs = status && status !== 'all' ? `?status=${status}` : '';
       return request<{ data: AuthorApplication[] }>(`/admin/author-applications${qs}`);

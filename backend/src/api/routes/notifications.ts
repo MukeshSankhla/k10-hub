@@ -1,7 +1,7 @@
 import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { requireAuth, requireAdmin, AuthRequest } from '../../middleware/auth';
-import { notificationService } from '../../services/NotificationService';
+import { notificationService, BroadcastNotificationParams } from '../../services/NotificationService';
 
 const router = Router();
 
@@ -84,7 +84,7 @@ router.delete('/:id', requireAuth, async (req: AuthRequest, res: Response, next:
 // POST /api/notifications/broadcast (Admin broadcast custom notification)
 router.post('/broadcast', requireAdmin, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const payload = broadcastSchema.parse(req.body);
+    const payload = broadcastSchema.parse(req.body) as BroadcastNotificationParams;
     const result = await notificationService.broadcastNotification(payload);
     res.json({
       success: true,
