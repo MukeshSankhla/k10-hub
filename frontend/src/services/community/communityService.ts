@@ -5,6 +5,7 @@
 import { ProjectDetail } from '../../config/projectsData';
 import { getAllProjects } from '../projects/projectStorageService';
 import { api } from '../api';
+import { censorBadWords } from '../../utils/contentModeration';
 
 export interface ProjectComment {
   id: string;
@@ -289,7 +290,13 @@ export function getUserBookmarkedProjects(userId?: string, altUserId?: string): 
 function getAllStoredComments(): ProjectComment[] {
   try {
     const raw = localStorage.getItem(COMMENTS_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const parsed: ProjectComment[] = raw ? JSON.parse(raw) : [];
+    // Ensure all stored/retrieved comments are sanitized for all age groups
+    return parsed.map((c) => ({
+      ...c,
+      content: censorBadWords(c.content || ''),
+      authorName: censorBadWords(c.authorName || 'Maker'),
+    }));
   } catch (e) {
     return [];
   }
@@ -297,7 +304,12 @@ function getAllStoredComments(): ProjectComment[] {
 
 function saveAllComments(comments: ProjectComment[]): void {
   try {
-    localStorage.setItem(COMMENTS_KEY, JSON.stringify(comments));
+    const sanitized = comments.map((c) => ({
+      ...c,
+      content: censorBadWords(c.content || ''),
+      authorName: censorBadWords(c.authorName || 'Maker'),
+    }));
+    localStorage.setItem(COMMENTS_KEY, JSON.stringify(sanitized));
     dispatchCommunityUpdate();
   } catch (e) {
     console.error('Failed to save comments', e);
@@ -305,60 +317,58 @@ function saveAllComments(comments: ProjectComment[]): void {
 }
 
 export function getProjectComments(projectId: string): ProjectComment[] {
-  if (!projectId) return [];
+  const cleanId = (projectId || '').trim().toLowerCase();
   const all = getAllStoredComments();
-  const cleanId = projectId.toLowerCase();
-  const cached = all.filter((c) => c.projectId.toLowerCase() === cleanId);
-
-  // Asynchronously trigger refresh from backend DB
+  const list = all.filter((c) => c.projectId.toLowerCase() === cleanId && !c.isDeleted);
+  
+  // Background-refresh from DB if backend is available
   refreshCommentsFromDb(projectId).catch(() => {});
-  return cached;
+  return list;
 }
 
 export async function refreshCommentsFromDb(projectId: string): Promise<ProjectComment[]> {
-  if (!projectId) return [];
   try {
+    const cleanId = (projectId || '').trim().toLowerCase();
     const res = await api.community.getComments(projectId);
     if (res && Array.isArray(res.comments)) {
       const dbComments: ProjectComment[] = res.comments.map((c: any) => ({
-        id: c.id,
-        projectId: c.projectId.toLowerCase(),
-        parentId: c.parentId || null,
-        authorName: c.authorName || 'Maker',
-        authorEmail: c.authorEmail,
-        authorAvatar: c.authorAvatar,
-        authorRole: c.authorRole || 'user',
-        authorId: String(c.authorId),
-        content: c.content,
-        createdAt: c.createdAt,
-        score: Number(c.score) || 0,
+        id: String(c.id),
+        projectId: String(c.projectId || projectId).toLowerCase(),
+        parentId: c.parentId ? String(c.parentId) : null,
+        authorName: censorBadWords(c.authorName || c.author?.name || 'Maker'),
+        authorEmail: c.authorEmail || c.author?.email,
+        authorAvatar: c.authorAvatar || c.author?.avatarUrl,
+        authorRole: c.authorRole || c.author?.role || 'User',
+        authorId: String(c.authorId || c.author?.id || 'anon'),
+        content: censorBadWords(c.content || ''),
+        createdAt: c.createdAt || new Date().toISOString(),
+        score: typeof c.score === 'number' ? c.score : 0,
         upvotedBy: Array.isArray(c.upvotedBy) ? c.upvotedBy : [],
         downvotedBy: Array.isArray(c.downvotedBy) ? c.downvotedBy : [],
-        isDeleted: Boolean(c.isDeleted),
+        isDeleted: !!c.isDeleted,
       }));
-
       const all = getAllStoredComments();
-      const cleanId = projectId.toLowerCase();
+      // Merge with non-conflicting
       const otherComments = all.filter((c) => c.projectId.toLowerCase() !== cleanId);
       const updated = [...dbComments, ...otherComments];
       saveAllComments(updated);
       return dbComments;
     }
   } catch (err) {
-    // Keep local cache on network error
+    // Silently fall back to cached
   }
   const all = getAllStoredComments();
-  return all.filter((c) => c.projectId.toLowerCase() === projectId.toLowerCase());
+  return all.filter((c) => c.projectId.toLowerCase() === (projectId || '').trim().toLowerCase() && !c.isDeleted);
 }
 
 export function getProjectCommentCount(projectId: string): number {
-  if (!projectId) return 0;
-  const list = getAllStoredComments().filter((c) => c.projectId.toLowerCase() === projectId.toLowerCase());
+  const cleanId = (projectId || '').trim().toLowerCase();
+  const list = getAllStoredComments().filter((c) => c.projectId.toLowerCase() === cleanId);
   return list.filter((c) => !c.isDeleted).length;
 }
 
 export interface CommentAuthor {
-  name: string;
+  name?: string;
   email?: string;
   avatar?: string;
   role?: string;
@@ -375,7 +385,8 @@ export function addComment(
     throw new Error('Please sign in to post comments or replies.');
   }
 
-  const cleanContent = content.trim();
+  // Auto-censor / disable inappropriate words
+  const cleanContent = censorBadWords(content.trim());
   if (!cleanContent) {
     throw new Error('Comment content cannot be empty.');
   }
@@ -386,7 +397,7 @@ export function addComment(
     id: 'cmt_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 7),
     projectId: projectId.toLowerCase(),
     parentId: parentId || null,
-    authorName: author.name || 'Maker',
+    authorName: censorBadWords(author.name || 'Maker'),
     authorEmail: author.email,
     authorAvatar: author.avatar,
     authorRole: author.role || 'User',

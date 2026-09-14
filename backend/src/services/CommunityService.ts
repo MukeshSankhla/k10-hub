@@ -3,6 +3,7 @@ import { db } from '../config/database';
 import { comments, projectLikes, projectBookmarks, projects } from '../db/schema';
 import { DbUser } from '../middleware/auth';
 import { notificationService } from './NotificationService';
+import { censorBadWords } from '../utils/contentModeration';
 
 export interface CommentNode {
   id: string;
@@ -189,18 +190,19 @@ export class CommunityService {
   ): Promise<CommentNode> {
     const id = `c_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
     const nowIso = new Date().toISOString();
-    const cleanContent = (payload.content || '').trim();
-
-    if (!cleanContent) {
+    const rawContent = (payload.content || '').trim();
+    if (!rawContent) {
       throw new Error('Comment content cannot be empty');
     }
+    const cleanContent = censorBadWords(rawContent);
+    const cleanAuthor = censorBadWords(user.name || 'Maker');
 
     await db.insert(comments).values({
       id,
       projectId,
       parentId: payload.parentId || null,
       authorId: String(user.id),
-      authorName: user.name || 'Maker',
+      authorName: cleanAuthor,
       authorAvatar: user.avatarUrl || null,
       authorEmail: user.email,
       authorRole: user.role || 'user',

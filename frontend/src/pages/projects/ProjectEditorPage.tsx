@@ -16,6 +16,8 @@ import {
   normalizeMarkdownUrl,
 } from '../../services/projects/projectStorageService';
 import { marked } from 'marked';
+import { convertGithubBlobToRaw } from '../../utils/githubUrl';
+import { containsInappropriateWords, censorBadWords, validateUrl } from '../../utils/contentModeration';
 import {
   Cpu,
   ArrowLeft,
@@ -236,8 +238,12 @@ export default function ProjectEditorPage() {
   };
 
   const handleFirmwareChange = (idx: number, field: keyof FirmwareConfig, value: string) => {
+    let finalValue = value;
+    if (field === 'firmwareUrl') {
+      finalValue = convertGithubBlobToRaw(value);
+    }
     const updated = [...firmwares];
-    updated[idx] = { ...updated[idx], [field]: value };
+    updated[idx] = { ...updated[idx], [field]: finalValue };
     setFirmwares(updated);
   };
 
@@ -258,6 +264,8 @@ export default function ProjectEditorPage() {
 
     if (!title.trim()) {
       newErrors.title = 'Project Title is required.';
+    } else if (containsInappropriateWords(title)) {
+      newErrors.title = 'Inappropriate language detected. K10 Hub is a professional platform for all age groups.';
     }
 
     if (!cleanSlug) {
@@ -268,6 +276,52 @@ export default function ProjectEditorPage() {
 
     if (!isDraft && !description.trim()) {
       newErrors.description = 'Short Pitch overview is required.';
+    } else if (description.trim() && containsInappropriateWords(description)) {
+      newErrors.description = 'Inappropriate language detected. K10 Hub is a professional platform for all age groups.';
+    }
+
+    if (customTagsInput && containsInappropriateWords(customTagsInput)) {
+      newErrors.customTags = 'Inappropriate language detected in tags.';
+    }
+
+    // Validate link insertions
+    if (coverImage.trim()) {
+      const v = validateUrl(coverImage, 'Cover Image URL');
+      if (!v.isValid) newErrors.coverImage = v.error || 'Invalid Cover Image URL';
+    }
+
+    if (projectMdFile.trim()) {
+      const v = validateUrl(projectMdFile, 'Markdown Guide URL');
+      if (!v.isValid) newErrors.projectMdFile = v.error || 'Invalid Markdown Guide URL';
+    }
+
+    if (videoLink.trim()) {
+      const v = validateUrl(videoLink, 'Video Link');
+      if (!v.isValid) newErrors.videoLink = v.error || 'Invalid Video Link';
+    }
+
+    if (githubLink.trim()) {
+      const v = validateUrl(githubLink, 'GitHub Link');
+      if (!v.isValid) newErrors.githubLink = v.error || 'Invalid GitHub Link';
+    }
+
+    if (docLink.trim()) {
+      const v = validateUrl(docLink, 'Documentation Link');
+      if (!v.isValid) newErrors.docLink = v.error || 'Invalid Documentation Link';
+    }
+
+    for (let i = 0; i < firmwares.length; i++) {
+      const fw = firmwares[i];
+      if (fw.name && containsInappropriateWords(fw.name)) {
+        newErrors[`fw_${i}_name`] = `Inappropriate language in Firmware edition #${i + 1}.`;
+      }
+      if (fw.versionNote && containsInappropriateWords(fw.versionNote)) {
+        newErrors[`fw_${i}_note`] = `Inappropriate language in Firmware release notes #${i + 1}.`;
+      }
+      if (fw.firmwareUrl.trim()) {
+        const v = validateUrl(fw.firmwareUrl, `Firmware #${i + 1} URL`);
+        if (!v.isValid) newErrors[`fw_${i}_url`] = v.error || 'Invalid Firmware URL';
+      }
     }
 
     // Check slug collision if creating new
@@ -316,11 +370,12 @@ export default function ProjectEditorPage() {
       const nextVisibility = nextStatus === 'published' ? 'public' : 'draft';
       const currentDate = formatCurrentPublishDate();
 
-      // Automatically assign release date to firmwares
+      // Automatically assign release date to firmwares and sanitize GitHub URLs
       const stampedFirmwares = firmwares
         .filter((f) => f.name.trim() || f.version.trim())
         .map((f) => ({
           ...f,
+          firmwareUrl: convertGithubBlobToRaw(f.firmwareUrl),
           releaseDate: f.releaseDate && f.releaseDate.trim() ? f.releaseDate : currentDate,
         }));
 
@@ -342,10 +397,10 @@ export default function ProjectEditorPage() {
 
       const projectToSave: ProjectDetail = {
         id: cleanSlug,
-        title: title.trim(),
+        title: censorBadWords(title.trim()),
         type,
         level,
-        author: finalAuthor,
+        author: censorBadWords(finalAuthor),
         authorId: finalAuthorId,
         authorRole: finalAuthorRole,
         authorAvatar: finalAuthorAvatar,
@@ -354,11 +409,11 @@ export default function ProjectEditorPage() {
         visibility: nextVisibility,
         publishDate: nextStatus === 'published' ? (publishDate || currentDate) : (publishDate || ''),
         flashCount: flashCount || 0,
-        description: description.trim() || 'Work in progress draft.',
+        description: censorBadWords(description.trim()) || 'Work in progress draft.',
         coverImage: coverImage.trim() || 'https://raw.githubusercontent.com/MukeshSankhla/ESP32_P4_DSI/main/images/DIY.gif',
         videoLink: videoLink.trim() || undefined,
         projectMdFile: projectMdFile.trim() || null,
-        markdownContent: mdPreviewContent || undefined,
+        markdownContent: mdPreviewContent ? censorBadWords(mdPreviewContent) : undefined,
         githubLink: githubLink.trim() || undefined,
         docLink: docLink.trim() || undefined,
         license: license.trim() || 'MIT',
@@ -754,11 +809,18 @@ export default function ProjectEditorPage() {
                   value={coverImage}
                   onChange={(e) => {
                     const val = e.target.value;
-                    const normalized = normalizeImageUrl(val);
+                    const normalized = convertGithubBlobToRaw(val);
                     setCoverImage(normalized);
                     setCoverImageError(false);
                   }}
-                  placeholder="https://.../cover.png or .gif"
+                  onBlur={(e) => {
+                    const normalized = convertGithubBlobToRaw(e.target.value);
+                    if (normalized !== coverImage) {
+                      setCoverImage(normalized);
+                      setCoverImageError(false);
+                    }
+                  }}
+                  placeholder="https://.../cover.png, .gif, or GitHub blob URL"
                   style={{
                     width: '100%',
                     padding: '10px 14px',
@@ -771,6 +833,9 @@ export default function ProjectEditorPage() {
                     marginBottom: coverImage.trim() ? 'var(--space-2)' : 0,
                   }}
                 />
+                <span style={{ display: 'block', fontSize: '10.5px', color: 'var(--color-ink-tertiary)', marginTop: '4px', marginBottom: 'var(--space-2)' }}>
+                  GitHub links (e.g. <code>github.com/.../blob/...</code>) are automatically converted to raw image links.
+                </span>
                 {coverImage.trim() && !coverImageError && (
                   <div
                     style={{
@@ -905,11 +970,18 @@ export default function ProjectEditorPage() {
                   value={projectMdFile}
                   onChange={(e) => {
                     const val = e.target.value;
-                    const normalized = normalizeMarkdownUrl(val);
+                    const normalized = convertGithubBlobToRaw(val);
                     setProjectMdFile(normalized);
                     if (mdPreviewError) setMdPreviewError(null);
                   }}
-                  placeholder="https://raw.githubusercontent.com/.../README.md"
+                  onBlur={(e) => {
+                    const normalized = convertGithubBlobToRaw(e.target.value);
+                    if (normalized !== projectMdFile) {
+                      setProjectMdFile(normalized);
+                      if (mdPreviewError) setMdPreviewError(null);
+                    }
+                  }}
+                  placeholder="https://raw.githubusercontent.com/.../README.md or GitHub blob URL"
                   style={{
                     width: '100%',
                     padding: '10px 14px',
@@ -922,6 +994,9 @@ export default function ProjectEditorPage() {
                     outline: 'none',
                   }}
                 />
+                <span style={{ display: 'block', fontSize: '10.5px', color: 'var(--color-ink-tertiary)', marginTop: '4px' }}>
+                  GitHub links (e.g. <code>github.com/.../blob/.../readme.md</code>) are automatically converted to raw content links.
+                </span>
 
                 {mdPreviewError && (
                   <div style={{ marginTop: 'var(--space-2)', color: '#dc2626', fontSize: 'var(--text-xs)', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -1109,7 +1184,13 @@ export default function ProjectEditorPage() {
                         type="url"
                         value={fw.firmwareUrl}
                         onChange={(e) => handleFirmwareChange(idx, 'firmwareUrl', e.target.value)}
-                        placeholder="https://.../firmware.bin"
+                        onBlur={(e) => {
+                          const converted = convertGithubBlobToRaw(e.target.value);
+                          if (converted !== e.target.value) {
+                            handleFirmwareChange(idx, 'firmwareUrl', converted);
+                          }
+                        }}
+                        placeholder="https://.../firmware.bin or https://github.com/.../blob/..."
                         style={{
                           width: '100%',
                           padding: '8px 10px',
@@ -1122,6 +1203,9 @@ export default function ProjectEditorPage() {
                           outline: 'none',
                         }}
                       />
+                      <span style={{ display: 'block', fontSize: '10px', color: 'var(--color-ink-tertiary)', marginTop: '4px' }}>
+                        GitHub links (e.g. <code>github.com/.../blob/...</code>) are automatically converted to raw download links.
+                      </span>
                     </div>
 
                     <div>

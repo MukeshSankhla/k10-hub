@@ -1,6 +1,8 @@
 import { ProjectDetail } from '../../config/projectsData';
 import { api } from '../api';
 import { isKnownAdmin } from '../../components/common/UserBadge';
+import { convertGithubBlobToRaw } from '../../utils/githubUrl';
+import { censorBadWords } from '../../utils/contentModeration';
 
 const STORAGE_KEY = 'k10_projects_store_v3';
 const UPDATE_EVENT = 'k10_projects_updated';
@@ -679,6 +681,11 @@ export async function saveProjectAsync(project: ProjectDetail): Promise<ProjectD
 
   const toSave: ProjectDetail = {
     ...project,
+    title: censorBadWords(project.title || ''),
+    description: censorBadWords(project.description || ''),
+    author: censorBadWords(project.author || ''),
+    markdownContent: project.markdownContent ? censorBadWords(project.markdownContent) : project.markdownContent,
+    tags: Array.isArray(project.tags) ? project.tags.map((t) => censorBadWords(t)) : [],
     status: project.status || 'draft',
     visibility: project.visibility || (project.status === 'published' ? 'public' : 'draft'),
     publishDate: project.publishDate || (project.status === 'published' ? currentDate : ''),
@@ -688,7 +695,11 @@ export async function saveProjectAsync(project: ProjectDetail): Promise<ProjectD
     flashCount: typeof project.flashCount === 'number' ? project.flashCount : 0,
     featured: Boolean(project.featured ?? project.isFeatured ?? false),
     isFeatured: Boolean(project.featured ?? project.isFeatured ?? false),
-    firmwares,
+    firmwares: firmwares.map((f) => ({
+      ...f,
+      name: censorBadWords(f.name || ''),
+      versionNote: censorBadWords(f.versionNote || ''),
+    })),
   };
 
   // Optimistically update memory and storage
@@ -747,6 +758,11 @@ export function saveProject(project: ProjectDetail): ProjectDetail {
 
   const toSave: ProjectDetail = {
     ...project,
+    title: censorBadWords(project.title || ''),
+    description: censorBadWords(project.description || ''),
+    author: censorBadWords(project.author || ''),
+    markdownContent: project.markdownContent ? censorBadWords(project.markdownContent) : project.markdownContent,
+    tags: Array.isArray(project.tags) ? project.tags.map((t) => censorBadWords(t)) : [],
     status: project.status || 'draft',
     visibility: project.visibility || (project.status === 'published' ? 'public' : 'draft'),
     publishDate: project.publishDate || (project.status === 'published' ? currentDate : ''),
@@ -756,7 +772,11 @@ export function saveProject(project: ProjectDetail): ProjectDetail {
     flashCount: typeof project.flashCount === 'number' ? project.flashCount : 0,
     featured: Boolean(project.featured ?? project.isFeatured ?? false),
     isFeatured: Boolean(project.featured ?? project.isFeatured ?? false),
-    firmwares,
+    firmwares: firmwares.map((f) => ({
+      ...f,
+      name: censorBadWords(f.name || ''),
+      versionNote: censorBadWords(f.versionNote || ''),
+    })),
   };
 
   if (existingIdx >= 0) {
@@ -962,17 +982,7 @@ export function parseVideoEmbedUrl(url?: string): { type: 'youtube' | 'vimeo' | 
  */
 export function normalizeImageUrl(url?: string): string {
   if (!url || !url.trim()) return '';
-  const clean = url.trim();
-
-  // GitHub blob link: https://github.com/:user/:repo/blob/:branch/...
-  const githubBlobRegex = /^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/(.+)$/i;
-  const match = clean.match(githubBlobRegex);
-  if (match) {
-    const [, user, repo, rest] = match;
-    return `https://raw.githubusercontent.com/${user}/${repo}/${rest}`;
-  }
-
-  return clean;
+  return convertGithubBlobToRaw(url);
 }
 
 /**
@@ -981,28 +991,5 @@ export function normalizeImageUrl(url?: string): string {
  */
 export function normalizeMarkdownUrl(url?: string | null): string {
   if (!url || !url.trim()) return '';
-  const clean = url.trim();
-
-  // If already raw.githubusercontent.com, return as-is
-  if (/^https?:\/\/raw\.githubusercontent\.com\//i.test(clean)) {
-    return clean;
-  }
-
-  // 1. https://github.com/:user/:repo/(blob|raw)/:branch/:path...
-  const blobOrRawRegex = /^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/(?:blob|raw)\/(.+)$/i;
-  const match1 = clean.match(blobOrRawRegex);
-  if (match1) {
-    const [, user, repo, rest] = match1;
-    return `https://raw.githubusercontent.com/${user}/${repo}/${rest}`;
-  }
-
-  // 2. https://github.com/:user/:repo/:branch/:path... (where path ends with .md or has slashes)
-  const branchPathRegex = /^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/([^/]+)\/(.+\.md)$/i;
-  const match2 = clean.match(branchPathRegex);
-  if (match2) {
-    const [, user, repo, branch, path] = match2;
-    return `https://raw.githubusercontent.com/${user}/${repo}/${branch}/${path}`;
-  }
-
-  return clean;
+  return convertGithubBlobToRaw(url);
 }

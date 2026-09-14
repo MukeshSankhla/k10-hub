@@ -1,5 +1,5 @@
 import { Suspense, useRef, useEffect, useState, Component, type ReactNode } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment, ContactShadows, Html } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -456,6 +456,51 @@ function ModelLoading() {
   );
 }
 
+// ─── Adaptive Camera Controller ───────────────────────────────────────────────
+function AdaptiveCameraController({
+  controlsRef,
+}: {
+  controlsRef: React.RefObject<any>;
+}) {
+  const { camera, size } = useThree();
+
+  useEffect(() => {
+    if (!camera) return;
+    const aspect = size.width / Math.max(size.height, 1);
+
+    // Adaptive camera distance calculation:
+    // Base distance is 4.6 (calibrated for standard desktop ~1.0 aspect ratio at 1080p).
+    // When the canvas aspect ratio is narrower than 1.0 (e.g. portrait or narrow hero column),
+    // smoothly back up the camera so the model doesn't overflow horizontally
+    // and component callout labels maintain ample breathing room.
+    let targetDistance = 4.6;
+    if (aspect < 1.0) {
+      targetDistance = 4.6 * (1.0 / Math.max(aspect, 0.6));
+    } else if (aspect > 1.45) {
+      targetDistance = 4.5;
+    }
+
+    // Safety bounds: keep camera between 4.4 and 6.2
+    targetDistance = Math.min(Math.max(targetDistance, 4.4), 6.2);
+
+    const controls = controlsRef.current;
+    if (controls) {
+      const currentPos = camera.position.clone();
+      const target = controls.target || new THREE.Vector3(0, 0, 0);
+      const dir = currentPos.clone().sub(target).normalize();
+      if (dir.lengthSq() === 0) dir.set(0, 0, 1);
+      camera.position.copy(target).addScaledVector(dir, targetDistance);
+      camera.updateProjectionMatrix();
+      controls.update();
+    } else {
+      camera.position.set(0, 0, targetDistance);
+      camera.updateProjectionMatrix();
+    }
+  }, [camera, size.width, size.height, controlsRef]);
+
+  return null;
+}
+
 // ─── 3D Canvas Scene ─────────────────────────────────────────────────────────
 function K10Scene({
   modelUrl,
@@ -503,6 +548,9 @@ function K10Scene({
       )}
 
       <ContactShadows position={[0, -1.48, 0]} opacity={0.25} scale={7.2} blur={2.2} far={3.5} color="#1C1917" />
+
+      {/* Adaptive Camera Framing based on screen & canvas dimensions */}
+      <AdaptiveCameraController controlsRef={controlsRef} />
 
       {/* OrbitControls: autoRotate stops smoothly on hover without camera zoom */}
       <OrbitControls

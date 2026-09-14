@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { ProjectDetail } from '../../config/projectsData';
 import { toast } from '../../contexts/ToastContext';
+import { containsInappropriateWords, censorBadWords, validateUrl } from '../../utils/contentModeration';
 import {
   getUserBookmarkedProjects,
   fetchUserBookmarksFromDb,
@@ -465,6 +466,21 @@ export default function ProfilePage() {
       return;
     }
 
+    if (containsInappropriateWords(appWhoYouAre)) {
+      setAppSubmitError('Inappropriate language detected. K10 Hub is a professional platform for all age groups.');
+      return;
+    }
+
+    if (appPortfolioUrl.trim() && !validateUrl(appPortfolioUrl, 'Portfolio URL').isValid) {
+      setAppSubmitError(validateUrl(appPortfolioUrl, 'Portfolio URL').error || 'Invalid Portfolio URL');
+      return;
+    }
+
+    if (unihikerProjectUrl.trim() && !validateUrl(unihikerProjectUrl, 'Project URL').isValid) {
+      setAppSubmitError(validateUrl(unihikerProjectUrl, 'Project URL').error || 'Invalid Project URL');
+      return;
+    }
+
     setAppFieldErrors({});
     setAppSubmitting(true);
 
@@ -473,7 +489,7 @@ export default function ProfilePage() {
       : 'Worked on UNIHIKER: No (New to UNIHIKER)';
 
     const res = await applyAuthor({
-      bio: appWhoYouAre.trim(),
+      bio: censorBadWords(appWhoYouAre.trim()),
       githubUrl: appPortfolioUrl.trim() || undefined,
       hardwareExperience: hardwareExp,
       sampleProjectIdeas: 'Accepted K10 Hub Author Legal Policies and Publishing Code of Conduct.',
@@ -493,12 +509,44 @@ export default function ProfilePage() {
   };
 
   const executeSaveProfile = async (shouldLockName: boolean) => {
+    if (editName.trim() && containsInappropriateWords(editName)) {
+      setEditError('Inappropriate language detected in Name. K10 Hub is a professional platform for all age groups.');
+      toast.warning('Inappropriate language detected in Name.');
+      return;
+    }
+
+    if (editBio.trim() && containsInappropriateWords(editBio)) {
+      setEditError('Inappropriate language detected in Bio. K10 Hub is a professional platform for all age groups.');
+      toast.warning('Inappropriate language detected in Bio.');
+      return;
+    }
+
+    const linksToValidate = [
+      { url: editGithubUrl, name: 'GitHub Link' },
+      { url: editSocialUrl, name: 'Social Link' },
+      { url: editInstagramUrl, name: 'Instagram Link' },
+      { url: editYoutubeUrl, name: 'YouTube Link' },
+      { url: editLinkedinUrl, name: 'LinkedIn Link' },
+      { url: editWebsiteUrl, name: 'Website Link' },
+    ];
+
+    for (const link of linksToValidate) {
+      if (link.url.trim()) {
+        const v = validateUrl(link.url, link.name);
+        if (!v.isValid) {
+          setEditError(v.error || `Invalid ${link.name}`);
+          toast.error(v.error || `Invalid ${link.name}`);
+          return;
+        }
+      }
+    }
+
     setEditSubmitting(true);
 
     const res = await updateProfile({
-      name: editName.trim() || undefined,
+      name: censorBadWords(editName.trim()) || undefined,
       avatarUrl: editAvatarUrl.trim() || undefined,
-      bio: editBio.trim() || undefined,
+      bio: censorBadWords(editBio.trim()) || undefined,
       githubUrl: editGithubUrl.trim() || undefined,
       socialPlatform: editSocialPlatform || undefined,
       socialUrl: editSocialUrl.trim() || undefined,

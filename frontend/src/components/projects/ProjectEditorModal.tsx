@@ -24,7 +24,9 @@ import {
 } from 'lucide-react';
 import { ProjectDetail, FirmwareConfig, AVAILABLE_TOPICS } from '../../config/projectsData';
 import { saveProject, parseVideoEmbedUrl, formatCurrentPublishDate } from '../../services/projects/projectStorageService';
+import { convertGithubBlobToRaw } from '../../utils/githubUrl';
 import { isKnownAdmin } from '../common/UserBadge';
+import { containsInappropriateWords, censorBadWords, validateUrl } from '../../utils/contentModeration';
 
 interface ProjectEditorModalProps {
   isOpen: boolean;
@@ -207,10 +209,14 @@ export default function ProjectEditorModal({
   };
 
   const handleUpdateFirmware = (index: number, field: keyof FirmwareConfig, value: string) => {
+    let finalValue = value;
+    if (field === 'firmwareUrl') {
+      finalValue = convertGithubBlobToRaw(value);
+    }
     const updated = [...firmwares];
     updated[index] = {
       ...updated[index],
-      [field]: value,
+      [field]: finalValue,
     };
     setFirmwares(updated);
   };
@@ -230,7 +236,11 @@ export default function ProjectEditorModal({
   // Form submit
   const handleSave = () => {
     if (!title.trim()) {
-      setErrorMessage('Please enter a project title.');
+      setErrorMessage('Please provide a project title.');
+      return;
+    }
+    if (containsInappropriateWords(title)) {
+      setErrorMessage('Inappropriate language detected in title. K10 Hub is a professional platform for all age groups.');
       return;
     }
 
@@ -248,6 +258,51 @@ export default function ProjectEditorModal({
       setErrorMessage('Please provide a brief description.');
       return;
     }
+    if (containsInappropriateWords(description)) {
+      setErrorMessage('Inappropriate language detected in description. K10 Hub is a professional platform for all age groups.');
+      return;
+    }
+
+    if (customTagsInput && containsInappropriateWords(customTagsInput)) {
+      setErrorMessage('Inappropriate language detected in custom tags.');
+      return;
+    }
+
+    if (coverImage.trim() && !validateUrl(coverImage, 'Cover Image URL').isValid) {
+      setErrorMessage(validateUrl(coverImage, 'Cover Image URL').error || 'Invalid Cover Image URL');
+      return;
+    }
+
+    if (videoLink.trim() && !validateUrl(videoLink, 'Video Link').isValid) {
+      setErrorMessage(validateUrl(videoLink, 'Video Link').error || 'Invalid Video Link');
+      return;
+    }
+
+    if (githubLink.trim() && !validateUrl(githubLink, 'GitHub Link').isValid) {
+      setErrorMessage(validateUrl(githubLink, 'GitHub Link').error || 'Invalid GitHub Link');
+      return;
+    }
+
+    if (docLink.trim() && !validateUrl(docLink, 'Documentation Link').isValid) {
+      setErrorMessage(validateUrl(docLink, 'Documentation Link').error || 'Invalid Documentation Link');
+      return;
+    }
+
+    for (let i = 0; i < firmwares.length; i++) {
+      const fw = firmwares[i];
+      if (fw.name && containsInappropriateWords(fw.name)) {
+        setErrorMessage(`Inappropriate language in Firmware edition #${i + 1}.`);
+        return;
+      }
+      if (fw.versionNote && containsInappropriateWords(fw.versionNote)) {
+        setErrorMessage(`Inappropriate language in Firmware release notes #${i + 1}.`);
+        return;
+      }
+      if (fw.firmwareUrl.trim() && !validateUrl(fw.firmwareUrl, `Firmware #${i + 1} URL`).isValid) {
+        setErrorMessage(validateUrl(fw.firmwareUrl, `Firmware #${i + 1} URL`).error || 'Invalid Firmware URL');
+        return;
+      }
+    }
 
     setIsSaving(true);
     setErrorMessage('');
@@ -261,24 +316,31 @@ export default function ProjectEditorModal({
 
       const projectToSave: ProjectDetail = {
         id: cleanId,
-        title: title.trim(),
+        title: censorBadWords(title.trim()),
         type,
         level,
-        author: author.trim() || 'Mukesh Sankhla',
+        author: censorBadWords(author.trim() || 'Mukesh Sankhla'),
         authorRole: isKnownAdmin({ name: author, role: authorRole }) ? 'admin' : (authorRole.trim() || 'Author'),
         authorAvatar: authorAvatar.trim() || undefined,
         publishDate: activeInitial?.publishDate || formatCurrentPublishDate(),
         flashCount: activeInitial?.flashCount || 0,
-        description: description.trim(),
+        description: censorBadWords(description.trim()),
         coverImage: coverImage.trim() || 'https://raw.githubusercontent.com/MukeshSankhla/ESP32_P4_DSI/main/images/DIY.gif',
         videoLink: videoLink.trim() || undefined,
         githubLink: githubLink.trim() || undefined,
         docLink: docLink.trim() || undefined,
         license: license.trim() || 'MIT',
-        tags: combinedTags.length > 0 ? combinedTags : ['UNIHIKER K10'],
+        tags: combinedTags.length > 0 ? combinedTags.map((t) => censorBadWords(t)) : ['UNIHIKER K10'],
         projectMdFile: activeInitial?.projectMdFile || null,
-        markdownContent: markdownContent.trim() || `# ${title}\n\n${description}`,
-        firmwares: firmwares.filter((f) => f.name.trim() || f.version.trim()),
+        markdownContent: censorBadWords(markdownContent.trim() || `# ${title}\n\n${description}`),
+        firmwares: firmwares
+          .filter((f) => f.name.trim() || f.version.trim())
+          .map((f) => ({
+            ...f,
+            name: censorBadWords(f.name),
+            versionNote: censorBadWords(f.versionNote),
+            firmwareUrl: convertGithubBlobToRaw(f.firmwareUrl),
+          })),
       };
 
       const saved = saveProject(projectToSave);
@@ -597,8 +659,9 @@ export default function ProjectEditorModal({
               <input
                 type="text"
                 value={coverImage}
-                onChange={(e) => setCoverImage(e.target.value)}
-                placeholder="https://example.com/cover.png or .gif"
+                onChange={(e) => setCoverImage(convertGithubBlobToRaw(e.target.value))}
+                onBlur={(e) => setCoverImage(convertGithubBlobToRaw(e.target.value))}
+                placeholder="https://example.com/cover.png, .gif, or GitHub blob URL"
                 style={{
                   width: '100%',
                   padding: '8px 12px',
@@ -686,8 +749,9 @@ export default function ProjectEditorModal({
               <input
                 type="text"
                 value={docLink}
-                onChange={(e) => setDocLink(e.target.value)}
-                placeholder="https://hackster.io/... or wiki"
+                onChange={(e) => setDocLink(convertGithubBlobToRaw(e.target.value))}
+                onBlur={(e) => setDocLink(convertGithubBlobToRaw(e.target.value))}
+                placeholder="https://... or GitHub markdown link"
                 style={{
                   width: '100%',
                   padding: '8px 12px',
@@ -845,7 +909,13 @@ export default function ProjectEditorModal({
                     type="text"
                     value={fw.firmwareUrl}
                     onChange={(e) => handleUpdateFirmware(idx, 'firmwareUrl', e.target.value)}
-                    placeholder="https://.../merged.bin URL"
+                    onBlur={(e) => {
+                      const converted = convertGithubBlobToRaw(e.target.value);
+                      if (converted !== e.target.value) {
+                        handleUpdateFirmware(idx, 'firmwareUrl', converted);
+                      }
+                    }}
+                    placeholder="https://.../merged.bin URL (GitHub links auto-convert)"
                     style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--color-border)', fontSize: '11px' }}
                   />
                   {firmwares.length > 1 && (

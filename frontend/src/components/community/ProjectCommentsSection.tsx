@@ -17,6 +17,7 @@ import {
   subscribeCommunity,
 } from '../../services/community/communityService';
 import UserBadge from '../common/UserBadge';
+import { censorBadWords, containsInappropriateWords } from '../../utils/contentModeration';
 import {
   MessageSquare,
   ChevronUp,
@@ -94,7 +95,10 @@ export default function ProjectCommentsSection({ project }: ProjectCommentsSecti
 
     setIsSubmittingRoot(true);
     try {
-      addComment(project.id, rootContent, null, {
+      const hadBadWords = containsInappropriateWords(rootContent);
+      const cleanContent = censorBadWords(rootContent);
+
+      addComment(project.id, cleanContent, null, {
         name: currentAuthorName,
         email: currentAuthorEmail,
         avatar: currentAuthorAvatar,
@@ -102,7 +106,11 @@ export default function ProjectCommentsSection({ project }: ProjectCommentsSecti
         id: String(currentAuthorId),
       });
       setRootContent('');
-      toast.success('Comment posted to discussion!');
+      if (hadBadWords) {
+        toast.warning('Inappropriate language was automatically filtered to keep our community safe for all age groups.', 'Content Filtered');
+      } else {
+        toast.success('Comment posted to discussion!');
+      }
     } catch (err: any) {
       toast.error(err.message || 'Failed to post comment.');
     } finally {
@@ -459,7 +467,10 @@ function CommentNodeItem({ node, project, depth }: CommentNodeItemProps) {
         profile?.avatarUrl ||
         user?.user_metadata?.avatar_url;
 
-      addComment(project.id, replyContent, comment.id, {
+      const hadBadWords = containsInappropriateWords(replyContent);
+      const cleanContent = censorBadWords(replyContent);
+
+      addComment(project.id, cleanContent, comment.id, {
         name: currentAuthorName,
         email: profile?.email || user?.email,
         avatar: currentAuthorAvatar,
@@ -469,7 +480,11 @@ function CommentNodeItem({ node, project, depth }: CommentNodeItemProps) {
 
       setReplyContent('');
       setShowReplyBox(false);
-      toast.success('Reply submitted!');
+      if (hadBadWords) {
+        toast.warning('Inappropriate language was automatically filtered to keep our community safe for all age groups.', 'Content Filtered');
+      } else {
+        toast.success('Reply submitted!');
+      }
     } catch (err: any) {
       toast.error(err.message || 'Failed to submit reply.');
     } finally {

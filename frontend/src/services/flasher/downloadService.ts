@@ -1,5 +1,6 @@
 // downloadService.ts
 // Handles downloading remote firmware binaries with progress reporting and caching.
+import { convertGithubBlobToRaw } from '../../utils/githubUrl';
 
 const binaryCache: Record<string, Uint8Array> = {};
 
@@ -11,15 +12,17 @@ export const downloadService = {
     url: string,
     onProgress?: (downloadedBytes: number, totalBytes: number) => void
   ): Promise<Uint8Array> {
+    const targetUrl = convertGithubBlobToRaw(url);
+
     // Check in-memory cache first
-    if (binaryCache[url]) {
-      const cached = binaryCache[url];
+    if (binaryCache[targetUrl]) {
+      const cached = binaryCache[targetUrl];
       if (onProgress) onProgress(cached.length, cached.length);
       return cached;
     }
 
     try {
-      const response = await fetch(url);
+      const response = await fetch(targetUrl);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);

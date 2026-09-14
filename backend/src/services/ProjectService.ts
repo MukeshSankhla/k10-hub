@@ -3,6 +3,7 @@ import { db } from '../config/database';
 import { projects, flashLogs } from '../db/schema';
 import { DbUser } from '../middleware/auth';
 import { notificationService } from './NotificationService';
+import { censorBadWords, validateUrl } from '../utils/contentModeration';
 
 export interface ProjectFilter {
   type?: string;
@@ -234,15 +235,26 @@ export class ProjectService {
       where: or(eq(projects.id, cleanId), eq(projects.slug, cleanId)),
     });
 
-    const serializedTags = payload.tags !== undefined
-      ? (Array.isArray(payload.tags) ? JSON.stringify(payload.tags) : typeof payload.tags === 'string' ? payload.tags : '[]')
-      : (existing?.tags || '[]');
+    const sanitizedTitle = payload.title !== undefined ? censorBadWords(String(payload.title)) : undefined;
+    const sanitizedDescription = payload.description !== undefined ? censorBadWords(String(payload.description)) : undefined;
+
+    let rawTags = payload.tags;
+    if (typeof rawTags === 'string') {
+      try { rawTags = JSON.parse(rawTags); } catch { rawTags = [rawTags]; }
+    }
+    const sanitizedTagsArray = Array.isArray(rawTags)
+      ? rawTags.map((t: string) => censorBadWords(String(t)))
+      : undefined;
+
+    const serializedTags = sanitizedTagsArray !== undefined
+      ? JSON.stringify(sanitizedTagsArray)
+      : (payload.tags !== undefined ? (typeof payload.tags === 'string' ? payload.tags : '[]') : (existing?.tags || '[]'));
 
     const serializedFirmwares = payload.firmwares !== undefined
       ? (Array.isArray(payload.firmwares) ? JSON.stringify(payload.firmwares) : typeof payload.firmwares === 'string' ? payload.firmwares : '[]')
       : (existing?.firmwares || '[]');
 
-    const authorName = payload.author || existing?.author || user?.name || 'Maker';
+    const authorName = censorBadWords(payload.author || existing?.author || user?.name || 'Maker');
     const authorAvatar = payload.authorAvatar !== undefined ? payload.authorAvatar : (existing?.authorAvatar || user?.avatarUrl || '');
     const rawRole = payload.authorRole !== undefined ? payload.authorRole : (existing?.authorRole || user?.role || 'author');
     const authorId = payload.authorId !== undefined ? payload.authorId : (existing?.authorId || (user ? String(user.id) : ''));
@@ -255,6 +267,12 @@ export class ProjectService {
     const authorRole = isAuthorAdmin ? 'admin' : rawRole;
 
     const isFeaturedVal = Boolean(payload.featured ?? payload.isFeatured ?? existing?.featured ?? false);
+
+    const safeCoverImage = payload.coverImage !== undefined ? validateUrl(payload.coverImage, 'Cover Image').cleanUrl : existing?.coverImage;
+    const safeDocLink = payload.docLink !== undefined ? validateUrl(payload.docLink, 'Documentation Link').cleanUrl : existing?.docLink;
+    const safeGithubLink = payload.githubLink !== undefined ? validateUrl(payload.githubLink, 'GitHub Link').cleanUrl : existing?.githubLink;
+    const safeVideoLink = payload.videoLink !== undefined ? validateUrl(payload.videoLink, 'Video Link').cleanUrl : existing?.videoLink;
+    const safeProjectMdFile = payload.projectMdFile !== undefined ? validateUrl(payload.projectMdFile, 'Markdown File').cleanUrl : (existing?.projectMdFile || null);
 
     if (existing) {
       // Permission check if user provided
@@ -270,7 +288,7 @@ export class ProjectService {
       await db
         .update(projects)
         .set({
-          title: payload.title !== undefined ? payload.title : existing.title,
+          title: sanitizedTitle !== undefined ? sanitizedTitle : existing.title,
           publishDate: payload.publishDate || existing.publishDate,
           type: payload.type || existing.type,
           level: payload.level !== undefined ? Number(payload.level) : existing.level,
@@ -282,12 +300,12 @@ export class ProjectService {
           status: payload.status || existing.status,
           visibility: payload.visibility || existing.visibility,
           featured: isFeaturedVal,
-          description: payload.description !== undefined ? payload.description : existing.description,
-          coverImage: payload.coverImage !== undefined ? payload.coverImage : existing.coverImage,
-          docLink: payload.docLink !== undefined ? payload.docLink : existing.docLink,
-          githubLink: payload.githubLink !== undefined ? payload.githubLink : existing.githubLink,
-          videoLink: payload.videoLink !== undefined ? payload.videoLink : existing.videoLink,
-          projectMdFile: payload.projectMdFile !== undefined ? payload.projectMdFile : (existing.projectMdFile || null),
+          description: sanitizedDescription !== undefined ? sanitizedDescription : existing.description,
+          coverImage: safeCoverImage,
+          docLink: safeDocLink,
+          githubLink: safeGithubLink,
+          videoLink: safeVideoLink,
+          projectMdFile: safeProjectMdFile,
           markdownContent: payload.markdownContent !== undefined ? payload.markdownContent : existing.markdownContent,
           compatibleBoard: payload.compatibleBoard || existing.compatibleBoard,
           license: payload.license || existing.license,
@@ -310,7 +328,7 @@ export class ProjectService {
     await db.insert(projects).values({
       id: cleanId,
       slug: cleanId,
-      title: payload.title || 'Untitled Project',
+      title: sanitizedTitle || 'Untitled Project',
       publishDate: payload.publishDate || '',
       type: payload.type || 'Project',
       level: Number(payload.level) || 1,
@@ -325,12 +343,12 @@ export class ProjectService {
       likeCount: Number(payload.likeCount) || 0,
       viewCount: 0,
       featured: isFeaturedVal,
-      description: payload.description || '',
-      coverImage: payload.coverImage || '',
-      docLink: payload.docLink || null,
-      githubLink: payload.githubLink || null,
-      videoLink: payload.videoLink || null,
-      projectMdFile: payload.projectMdFile || null,
+      description: sanitizedDescription || '',
+      coverImage: safeCoverImage || '',
+      docLink: safeDocLink || null,
+      githubLink: safeGithubLink || null,
+      videoLink: safeVideoLink || null,
+      projectMdFile: safeProjectMdFile || null,
       markdownContent: payload.markdownContent || '',
       compatibleBoard: payload.compatibleBoard || 'UNIHIKER K10',
       license: payload.license || 'MIT',
