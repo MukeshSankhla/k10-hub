@@ -59,6 +59,7 @@ export interface ProjectCardProps {
   actionToolbar?: React.ReactNode;
   statusBadge?: React.ReactNode;
   compactLevelBadge?: boolean;
+  hideDescription?: boolean;
 }
 
 /**
@@ -71,6 +72,7 @@ export default function ProjectCard({
   actionToolbar,
   statusBadge,
   compactLevelBadge,
+  hideDescription,
 }: ProjectCardProps) {
   const { user, profile } = useAuth();
   const authorInfo = resolveProjectAuthor(project, user, profile);
@@ -158,34 +160,28 @@ export default function ProjectCard({
             <div
               style={{
                 position: 'absolute',
-                top: 10,
-                right: 10,
+                top: 5,
+                right: 5,
                 zIndex: 5,
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
+                gap: '4px',
               }}
             >
               {isFeatured && (
-                <div
+                <span
                   title="Featured"
                   aria-label="Featured Build"
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    width: 22,
-                    height: 22,
-                    borderRadius: '50%',
-                    backgroundColor: 'rgba(0, 0, 0, 0.72)',
-                    backdropFilter: 'blur(4px)',
-                    border: '1px solid rgba(245, 158, 11, 0.6)',
-                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.35)',
                     color: '#f59e0b',
+                    lineHeight: 1,
                   }}
                 >
-                  <Star size={12} fill="#f59e0b" color="#f59e0b" />
-                </div>
+                  <Star size={13} fill="#f59e0b" color="#f59e0b" />
+                </span>
               )}
               {statusBadge}
             </div>
@@ -370,21 +366,23 @@ export default function ProjectCard({
             {project.title}
           </h3>
 
-          <p
-            style={{
-              fontSize: 'var(--text-xs)',
-              color: 'var(--color-ink-secondary)',
-              lineHeight: 1.5,
-              margin: '0 0 var(--space-5) 0',
-              display: '-webkit-box',
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-              flex: 1,
-            }}
-          >
-            {project.description}
-          </p>
+          {!hideDescription && project.description && (
+            <p
+              style={{
+                fontSize: 'var(--text-xs)',
+                color: 'var(--color-ink-secondary)',
+                lineHeight: 1.5,
+                margin: '0 0 var(--space-5) 0',
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                flex: 1,
+              }}
+            >
+              {project.description}
+            </p>
+          )}
         </Link>
 
         {/* Card Footer */}

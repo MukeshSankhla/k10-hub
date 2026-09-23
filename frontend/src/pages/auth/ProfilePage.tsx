@@ -1415,44 +1415,27 @@ export default function ProfilePage() {
                           project={project}
                           isCurrentAuthor={() => isOwnProfile}
                           compactLevelBadge={true}
+                          hideDescription={true}
                           statusBadge={
                             isOwnProfile ? (
                               <span
                                 title={`Status: ${project.status === 'pending_approval' ? 'In Review' : (project.status || 'Published')}`}
                                 style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  width: 20,
-                                  height: 20,
+                                  display: 'inline-block',
+                                  width: 8,
+                                  height: 8,
                                   borderRadius: '50%',
-                                  backgroundColor: 'rgba(0, 0, 0, 0.65)',
-                                  backdropFilter: 'blur(4px)',
-                                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                                  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.3)',
+                                  backgroundColor:
+                                    project.status === 'draft'
+                                      ? '#94a3b8'
+                                      : project.status === 'pending_approval'
+                                      ? '#fde047'
+                                      : project.status === 'rejected'
+                                      ? '#ef4444'
+                                      : '#22c55e',
+                                  flexShrink: 0,
                                 }}
-                              >
-                                <span
-                                  style={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: '50%',
-                                    backgroundColor:
-                                      project.status === 'draft'
-                                        ? '#94a3b8'
-                                        : project.status === 'pending_approval'
-                                        ? '#fde047'
-                                        : project.status === 'rejected'
-                                        ? '#ef4444'
-                                        : '#22c55e',
-                                    display: 'inline-block',
-                                    boxShadow:
-                                      project.status === 'rejected'
-                                        ? '0 0 6px #ef4444'
-                                        : (project.status === 'draft' ? 'none' : '0 0 6px #22c55e'),
-                                  }}
-                                />
-                              </span>
+                              />
                             ) : undefined
                           }
                         actionToolbar={
