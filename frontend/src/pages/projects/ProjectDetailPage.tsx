@@ -755,8 +755,11 @@ export default function ProjectDetailPage() {
                   }}
                 >
                   <img
-                    src={project.coverImage}
+                    src={project.coverImage && project.coverImage.trim() ? project.coverImage : '/images/Place Holder.png'}
                     alt={project.title}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = '/images/Place Holder.png';
+                    }}
                     style={{
                       width: '100%',
                       height: '100%',

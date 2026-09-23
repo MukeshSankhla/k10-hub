@@ -52,7 +52,7 @@ export default function ProjectEditorModal({
   const [id, setId] = useState('');
   const [idTouched, setIdTouched] = useState(false);
   const [type, setType] = useState<'Project' | 'Tutorial'>(defaultType);
-  const [level, setLevel] = useState<number>(2);
+  const [level, setLevel] = useState<number>(1);
   const [description, setDescription] = useState('');
   const [coverImage, setCoverImage] = useState('');
   const [videoLink, setVideoLink] = useState('');
@@ -89,7 +89,7 @@ export default function ProjectEditorModal({
         setId(activeInitial.id || '');
         setIdTouched(true);
         setType((activeInitial.type as 'Project' | 'Tutorial') || defaultType);
-        setLevel(activeInitial.level || 2);
+        setLevel(activeInitial.level || 1);
         setDescription(activeInitial.description || '');
         setCoverImage(activeInitial.coverImage || '');
         setVideoLink(activeInitial.videoLink || '');
@@ -129,9 +129,9 @@ export default function ProjectEditorModal({
         setId('');
         setIdTouched(false);
         setType(defaultType);
-        setLevel(2);
+        setLevel(1);
         setDescription('');
-        setCoverImage('https://raw.githubusercontent.com/MukeshSankhla/ESP32_P4_DSI/main/images/DIY.gif');
+        setCoverImage('/images/Place Holder.png');
         setVideoLink('');
         setGithubLink('');
         setDocLink('');
@@ -325,7 +325,7 @@ export default function ProjectEditorModal({
         publishDate: activeInitial?.publishDate || formatCurrentPublishDate(),
         flashCount: activeInitial?.flashCount || 0,
         description: censorBadWords(description.trim()),
-        coverImage: coverImage.trim() || 'https://raw.githubusercontent.com/MukeshSankhla/ESP32_P4_DSI/main/images/DIY.gif',
+        coverImage: coverImage.trim() || '/images/Place Holder.png',
         videoLink: videoLink.trim() || undefined,
         githubLink: githubLink.trim() || undefined,
         docLink: docLink.trim() || undefined,

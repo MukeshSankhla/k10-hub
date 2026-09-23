@@ -24,7 +24,7 @@ import {
 const LEVEL_CONFIG = [
   {
     level: 1,
-    name: 'Beginner',
+    name: 'Beginners',
     tagline: 'First Blink, GPIO & Primitives',
     description: 'Basic hardware control, onboard RGB LEDs, tactile buttons, and first sketch structure.',
     color: '#16a34a',
@@ -33,7 +33,7 @@ const LEVEL_CONFIG = [
   },
   {
     level: 2,
-    name: 'Intermediate',
+    name: 'Inter',
     tagline: 'Sensors, Audio & LCD Display',
     description: 'Color display interfaces, analog/I2C sensor integration, buzzer sound synthesis, and events.',
     color: '#0284c7',
@@ -356,8 +356,8 @@ export default function ProjectsGalleryPage() {
                   }}
                 >
                   <option value="all">All difficulties</option>
-                  <option value="1">Beginner</option>
-                  <option value="2">Intermediate</option>
+                  <option value="1">Beginners</option>
+                  <option value="2">Inter</option>
                   <option value="3">Advance</option>
                   <option value="4">Expert</option>
                 </select>
@@ -561,6 +561,120 @@ export default function ProjectsGalleryPage() {
               >
                 Clear Filters
               </button>
+            </div>
+          ) : (isTutorialsMode && selectedLevel === 0 && !searchTerm.trim() && selectedTag === 'All') ? (
+            /* 4 Tutorial Sections: Beginners, Inter, Advance, Expert (Each showing 4 tutorials, same as home page) */
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-12)' }}>
+              {LEVEL_CONFIG.map((lvl) => {
+                const sectionItems = baseItems.filter((p) => p.level === lvl.level);
+                const displayItems = sectionItems.slice(0, 4);
+
+                return (
+                  <section key={lvl.level} id={`section-${lvl.name.toLowerCase()}`} aria-labelledby={`title-${lvl.level}`}>
+                    {/* Header matching home page featured showcase style */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'baseline',
+                        justifyContent: 'space-between',
+                        marginBottom: 'var(--space-4)',
+                        paddingBottom: 'var(--space-3)',
+                        borderBottom: '1px solid var(--color-border)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <h2
+                          id={`title-${lvl.level}`}
+                          style={{
+                            fontSize: 'var(--text-xl)',
+                            fontWeight: 700,
+                            color: 'var(--color-ink-primary)',
+                            letterSpacing: '-0.02em',
+                            margin: 0,
+                          }}
+                        >
+                          {lvl.name}
+                        </h2>
+                        {sectionItems.length > 0 && (
+                          <span
+                            style={{
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              padding: '2px 7px',
+                              borderRadius: 'var(--radius-full)',
+                              backgroundColor: lvl.bg,
+                              color: lvl.color,
+                            }}
+                          >
+                            {sectionItems.length}
+                          </span>
+                        )}
+                        <span style={{ fontSize: '12px', color: 'var(--color-ink-tertiary)', marginLeft: '4px' }}>
+                          — {lvl.description}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleSelectLevel(lvl.level)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontSize: 'var(--text-xs)',
+                          fontWeight: 600,
+                          color: lvl.color,
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: 0,
+                        }}
+                      >
+                        <span>View All ({sectionItems.length})</span>
+                        <ArrowRight size={13} aria-hidden="true" />
+                      </button>
+                    </div>
+
+                    {/* 4-item showcase grid matching home page */}
+                    {displayItems.length > 0 ? (
+                      <div
+                        className="featured-showcase-grid"
+                        role="list"
+                        aria-label={`${lvl.name} UNIHIKER K10 Tutorials`}
+                      >
+                        {displayItems.map((tutorial) => (
+                          <div key={tutorial.id} role="listitem" style={{ height: '100%' }}>
+                            <ProjectCard project={tutorial} isCurrentAuthor={isCurrentAuthor} />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          padding: 'var(--space-8) var(--space-4)',
+                          textAlign: 'center',
+                          backgroundColor: 'var(--color-surface)',
+                          borderRadius: 'var(--radius-lg)',
+                          border: '1px dashed var(--color-border)',
+                        }}
+                      >
+                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-ink-secondary)', margin: '0 0 var(--space-2) 0' }}>
+                          No {lvl.name.toLowerCase()} tutorials published yet.
+                        </p>
+                        {isAuthorOrAdmin ? (
+                          <Link
+                            to={`/project/new?type=tutorial`}
+                            className="btn btn--secondary btn--sm"
+                            style={{ fontSize: '11px', padding: '4px 10px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <Plus size={12} /> Submit a {lvl.name} Tutorial
+                          </Link>
+                        ) : null}
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
             </div>
           ) : viewMode === 'sections' && selectedLevel === 0 ? (
             /* By Level Sections Mode (Only renders levels with projects!) */

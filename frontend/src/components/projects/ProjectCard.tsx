@@ -36,13 +36,20 @@ export function getLevelLabel(level: number | string | undefined): string {
 export interface ProjectCardProps {
   project: ProjectDetail;
   isCurrentAuthor?: (name: string, id?: string) => boolean;
+  actionToolbar?: React.ReactNode;
+  statusBadge?: React.ReactNode;
 }
 
 /**
  * Standard UNIHIKER K10 Project/Tutorial Card
- * Shared across Homepage, Projects Gallery, and Tutorials Gallery.
+ * Shared across Homepage, Projects Gallery, Tutorials Gallery, and Profile.
  */
-export default function ProjectCard({ project, isCurrentAuthor }: ProjectCardProps) {
+export default function ProjectCard({
+  project,
+  isCurrentAuthor,
+  actionToolbar,
+  statusBadge,
+}: ProjectCardProps) {
   const { user, profile } = useAuth();
   const authorInfo = resolveProjectAuthor(project, user, profile);
   const isMine =
@@ -103,9 +110,6 @@ export default function ProjectCard({ project, isCurrentAuthor }: ProjectCardPro
             width: '100%',
             aspectRatio: '4 / 3',
             backgroundColor: '#0a0d14',
-            backgroundImage: project.coverImage ? `url(${project.coverImage})` : undefined,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
             position: 'relative',
             overflow: 'hidden',
             display: 'flex',
@@ -113,18 +117,32 @@ export default function ProjectCard({ project, isCurrentAuthor }: ProjectCardPro
             justifyContent: 'center',
           }}
         >
-          {!project.coverImage && (
-            <span
+          <img
+            src={project.coverImage && project.coverImage.trim() ? project.coverImage : '/images/Place Holder.png'}
+            alt={project.title}
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = '/images/Place Holder.png';
+            }}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              display: 'block',
+            }}
+          />
+
+          {/* Top-Right Status Badge (if provided, e.g. in author profile view) */}
+          {statusBadge && (
+            <div
               style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                color: 'rgba(255, 255, 255, 0.4)',
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
+                position: 'absolute',
+                top: 10,
+                right: 10,
+                zIndex: 4,
               }}
             >
-              UNIHIKER K10
-            </span>
+              {statusBadge}
+            </div>
           )}
 
           {/* Top-Left Level Badge */}
@@ -485,6 +503,22 @@ export default function ProjectCard({ project, isCurrentAuthor }: ProjectCardPro
           </div>
         </div>
       </div>
+
+      {/* Action Toolbar for Author / Profile management */}
+      {actionToolbar && (
+        <div
+          style={{
+            padding: '10px 14px',
+            borderTop: '1px solid var(--color-border)',
+            backgroundColor: 'var(--color-paper)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
+          {actionToolbar}
+        </div>
+      )}
     </div>
   );
 }

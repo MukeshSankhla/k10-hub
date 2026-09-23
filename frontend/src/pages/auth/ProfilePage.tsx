@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../services/api';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
+import ProjectCard from '../../components/projects/ProjectCard';
 import {
   Shield,
   Cpu,
@@ -22,7 +23,6 @@ import {
   Linkedin,
   FolderGit2,
   Eye,
-  Zap,
   Plus,
   BookOpen,
   Trash2,
@@ -32,7 +32,6 @@ import {
   Lock,
   AlertTriangle,
   Bookmark,
-  Calendar,
   Copy,
   Check,
 } from 'lucide-react';
@@ -55,37 +54,7 @@ import {
   syncCurrentUserProjects,
   saveKnownAuthor,
 } from '../../services/projects/projectStorageService';
-import { getLocalFlashCount, subscribeProjectFlashCount } from '../../services/flasher/flashCountService';
 import UserBadge, { isKnownAdmin } from '../../components/common/UserBadge';
-
-function ProjectFlashCount({ projectId, initialCount = 0 }: { projectId: string; initialCount?: number }) {
-  const [count, setCount] = useState<number>(() => Math.max(initialCount || 0, getLocalFlashCount(projectId)));
-
-  useEffect(() => {
-    if (!projectId) return;
-    setCount(Math.max(initialCount || 0, getLocalFlashCount(projectId)));
-    const unsubscribe = subscribeProjectFlashCount(projectId, (liveCount) => {
-      setCount(Math.max(liveCount, initialCount || 0));
-    });
-    return unsubscribe;
-  }, [projectId, initialCount]);
-
-  return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '4px',
-        color: 'var(--color-accent)',
-        fontWeight: 600,
-        fontSize: '11px',
-      }}
-      title={`${count} successful web flashes`}
-    >
-      <Zap size={12} /> {count} flashes
-    </span>
-  );
-}
 
 const getNameLockStorageKey = (idOrEmail: string) => `k10_name_locked_${idOrEmail.trim().toLowerCase()}`;
 
@@ -1339,471 +1308,278 @@ export default function ProfilePage() {
 
               {displayedProjects && displayedProjects.length > 0 ? (
                 <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                    gap: 'var(--space-5)',
-                  }}
+                  className="featured-showcase-grid"
+                  role="list"
+                  aria-label="Profile UNIHIKER K10 Projects & Tutorials"
                 >
                   {displayedProjects.map((project) => (
-                    <div
-                      key={project.id}
-                      style={{
-                        backgroundColor: 'var(--color-surface)',
-                        border: '1px solid var(--color-border)',
-                        borderRadius: '16px',
-                        overflow: 'hidden',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03)',
-                        transition: 'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.08)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03)';
-                      }}
-                    >
-                      {/* Cover Thumbnail */}
-                      <Link
-                        to={`/project/${project.id}`}
-                        style={{
-                          height: 155,
-                          backgroundColor: '#0f172a',
-                          position: 'relative',
-                          overflow: 'hidden',
-                          display: 'block',
-                          textDecoration: 'none',
-                        }}
-                      >
-                        {project.coverImage ? (
-                          <img
-                            src={project.coverImage}
-                            alt={project.title}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          />
-                        ) : (
-                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-ink-tertiary)' }}>
-                            <Cpu size={36} style={{ opacity: 0.3 }} />
-                          </div>
-                        )}
-                        {/* Subtle top gradient shadow for badge readability */}
-                        <div
-                          style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            height: 48,
-                            background: 'linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 100%)',
-                            pointerEvents: 'none',
-                          }}
-                        />
-
-                        {/* Category Badge */}
-                        <span
-                          style={{
-                            position: 'absolute',
-                            top: 10,
-                            left: 10,
-                            backgroundColor: 'rgba(15, 23, 42, 0.8)',
-                            color: '#fff',
-                            fontSize: '9.5px',
-                            fontWeight: 700,
-                            padding: '3px 8px',
-                            borderRadius: '6px',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.06em',
-                            backdropFilter: 'blur(6px)',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                          }}
-                        >
-                          {project.type === 'Tutorial' ? <BookOpen size={10} /> : <Cpu size={10} />}
-                          {project.type || 'Project'}
-                        </span>
-
-                        {/* Status Badge with Live Dot */}
-                        <span
-                          style={{
-                            position: 'absolute',
-                            top: 10,
-                            right: 10,
-                            fontSize: '9.5px',
-                            fontWeight: 700,
-                            padding: '3px 8px',
-                            borderRadius: '6px',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.05em',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '5px',
-                            backdropFilter: 'blur(6px)',
-                            backgroundColor:
-                              project.status === 'draft'
-                                ? 'rgba(51, 65, 85, 0.88)'
-                                : project.status === 'pending_approval'
-                                ? 'rgba(180, 83, 9, 0.9)'
-                                : project.status === 'rejected'
-                                ? 'rgba(185, 28, 28, 0.9)'
-                                : 'rgba(21, 128, 61, 0.9)',
-                            color: '#ffffff',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                          }}
-                        >
-                          <span
-                            style={{
-                              width: 6,
-                              height: 6,
-                              borderRadius: '50%',
-                              backgroundColor:
-                                project.status === 'draft'
-                                  ? '#94a3b8'
-                                  : project.status === 'pending_approval'
-                                  ? '#fde047'
-                                  : project.status === 'rejected'
-                                  ? '#fca5a5'
-                                  : '#4ade80',
-                              display: 'inline-block',
-                            }}
-                          />
-                          {project.status === 'pending_approval' ? 'In Review' : (project.status || 'Published')}
-                        </span>
-                      </Link>
-
-                      {/* Card Body */}
-                      <div style={{ padding: '14px 16px 12px 16px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                        <h3 style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 6px 0', lineHeight: 1.35 }}>
-                          <Link
-                            to={`/project/${project.id}`}
-                            style={{ textDecoration: 'none', color: 'var(--color-ink-primary)', transition: 'color 0.15s ease' }}
-                            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-accent)'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--color-ink-primary)'; }}
-                          >
-                            {project.title}
-                          </Link>
-                        </h3>
-                        <p style={{ fontSize: '12px', color: 'var(--color-ink-secondary)', margin: '0 0 12px 0', lineHeight: 1.5, flex: 1, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                          {project.description}
-                        </p>
-
-                        {/* Meta info row */}
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            fontSize: '11px',
-                            color: 'var(--color-ink-tertiary)',
-                            marginTop: 'auto',
-                          }}
-                        >
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            <Calendar size={12} style={{ opacity: 0.7 }} />
-                            {project.publishDate || 'Recent'}
-                          </span>
-                          <ProjectFlashCount projectId={project.id} initialCount={project.flashCount} />
-                        </div>
-                      </div>
-
-                      {/* Flush Card Bottom Action Toolbar */}
-                      {isOwnProfile ? (
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '10px 14px',
-                            borderTop: '1px solid var(--color-border)',
-                            backgroundColor: 'var(--color-paper)',
-                          }}
-                        >
-                          {projectStatusFilter === 'bookmarked' ? (
-                            <>
-                              <Link
-                                to={`/project/${project.id}`}
+                    <div key={project.id} role="listitem" style={{ height: '100%' }}>
+                      <ProjectCard
+                        project={project}
+                        isCurrentAuthor={() => isOwnProfile}
+                        statusBadge={
+                          isOwnProfile ? (
+                            <span
+                              style={{
+                                fontSize: '9.5px',
+                                fontWeight: 700,
+                                padding: '3px 8px',
+                                borderRadius: '6px',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                backdropFilter: 'blur(6px)',
+                                backgroundColor:
+                                  project.status === 'draft'
+                                    ? 'rgba(51, 65, 85, 0.88)'
+                                    : project.status === 'pending_approval'
+                                    ? 'rgba(180, 83, 9, 0.9)'
+                                    : project.status === 'rejected'
+                                    ? 'rgba(185, 28, 28, 0.9)'
+                                    : 'rgba(21, 128, 61, 0.9)',
+                                color: '#ffffff',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                              }}
+                            >
+                              <span
                                 style={{
-                                  flex: 1,
-                                  height: '32px',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: '6px',
-                                  fontSize: '12px',
-                                  fontWeight: 600,
-                                  padding: '0 12px',
-                                  borderRadius: '7px',
-                                  textDecoration: 'none',
-                                  boxSizing: 'border-box',
-                                  backgroundColor: 'var(--color-ink-primary)',
-                                  color: '#ffffff',
-                                  transition: 'all 0.15s ease',
-                                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.12)',
+                                  width: 6,
+                                  height: 6,
+                                  borderRadius: '50%',
+                                  backgroundColor:
+                                    project.status === 'draft'
+                                      ? '#94a3b8'
+                                      : project.status === 'pending_approval'
+                                      ? '#fde047'
+                                      : project.status === 'rejected'
+                                      ? '#fca5a5'
+                                      : '#4ade80',
+                                  display: 'inline-block',
                                 }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.opacity = '0.9';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.opacity = '1';
-                                }}
-                              >
-                                <Eye size={13} />
-                                <span>View Build</span>
-                              </Link>
+                              />
+                              {project.status === 'pending_approval' ? 'In Review' : (project.status || 'Published')}
+                            </span>
+                          ) : undefined
+                        }
+                        actionToolbar={
+                          isOwnProfile ? (
+                            projectStatusFilter === 'bookmarked' ? (
+                              <>
+                                <Link
+                                  to={`/project/${project.id}`}
+                                  style={{
+                                    flex: 1,
+                                    height: '32px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '6px',
+                                    fontSize: '12px',
+                                    fontWeight: 600,
+                                    padding: '0 12px',
+                                    borderRadius: '7px',
+                                    textDecoration: 'none',
+                                    boxSizing: 'border-box',
+                                    backgroundColor: 'var(--color-ink-primary)',
+                                    color: '#ffffff',
+                                    transition: 'all 0.15s ease',
+                                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.12)',
+                                  }}
+                                >
+                                  <Eye size={13} />
+                                  <span>View Build</span>
+                                </Link>
 
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  toggleProjectBookmark(project.id, user?.id ? String(user.id) : undefined, profile?.id ? String(profile.id) : undefined);
-                                  setBookmarkedProjects(getUserBookmarkedProjects(user?.id ? String(user.id) : undefined, profile?.id ? String(profile.id) : undefined));
-                                  toast.info('Removed from bookmarks.');
-                                }}
-                                title="Remove from Bookmarks"
-                                aria-label="Remove from Bookmarks"
-                                style={{
-                                  width: '32px',
-                                  height: '32px',
-                                  minWidth: '32px',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  padding: 0,
-                                  borderRadius: '7px',
-                                  border: '1px solid var(--color-border)',
-                                  backgroundColor: 'var(--color-surface)',
-                                  color: 'var(--color-accent)',
-                                  boxSizing: 'border-box',
-                                  cursor: 'pointer',
-                                  transition: 'all 0.15s ease',
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)';
-                                  e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.2)';
-                                  e.currentTarget.style.color = '#dc2626';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor = 'var(--color-surface)';
-                                  e.currentTarget.style.borderColor = 'var(--color-border)';
-                                  e.currentTarget.style.color = 'var(--color-accent)';
-                                }}
-                              >
-                                <Bookmark size={14} fill="currentColor" />
-                              </button>
-                            </>
-                          ) : (role === 'author' || role === 'admin') ? (
-                            <>
-                              <Link
-                                to={`/project/${project.id}/edit`}
-                                style={{
-                                  flex: 1,
-                                  height: '32px',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: '6px',
-                                  fontSize: '12px',
-                                  fontWeight: 600,
-                                  padding: '0 12px',
-                                  borderRadius: '7px',
-                                  textDecoration: 'none',
-                                  boxSizing: 'border-box',
-                                  backgroundColor: 'var(--color-surface)',
-                                  border: '1px solid var(--color-border)',
-                                  color: 'var(--color-ink-primary)',
-                                  transition: 'all 0.15s ease',
-                                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.borderColor = 'var(--color-ink-tertiary)';
-                                  e.currentTarget.style.backgroundColor = 'var(--color-paper)';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.borderColor = 'var(--color-border)';
-                                  e.currentTarget.style.backgroundColor = 'var(--color-surface)';
-                                }}
-                              >
-                                <Edit3 size={13} />
-                                <span>Edit</span>
-                              </Link>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    toggleProjectBookmark(project.id, user?.id ? String(user.id) : undefined, profile?.id ? String(profile.id) : undefined);
+                                    setBookmarkedProjects(getUserBookmarkedProjects(user?.id ? String(user.id) : undefined, profile?.id ? String(profile.id) : undefined));
+                                    toast.info('Removed from bookmarks.');
+                                  }}
+                                  title="Remove from Bookmarks"
+                                  aria-label="Remove from Bookmarks"
+                                  style={{
+                                    width: '32px',
+                                    height: '32px',
+                                    minWidth: '32px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: 0,
+                                    borderRadius: '7px',
+                                    border: '1px solid var(--color-border)',
+                                    backgroundColor: 'var(--color-surface)',
+                                    color: 'var(--color-accent)',
+                                    boxSizing: 'border-box',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s ease',
+                                  }}
+                                >
+                                  <Bookmark size={14} fill="currentColor" />
+                                </button>
+                              </>
+                            ) : (role === 'author' || role === 'admin') ? (
+                              <>
+                                <Link
+                                  to={`/project/${project.id}/edit`}
+                                  style={{
+                                    flex: 1,
+                                    height: '32px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '6px',
+                                    fontSize: '12px',
+                                    fontWeight: 600,
+                                    padding: '0 12px',
+                                    borderRadius: '7px',
+                                    textDecoration: 'none',
+                                    boxSizing: 'border-box',
+                                    backgroundColor: 'var(--color-surface)',
+                                    border: '1px solid var(--color-border)',
+                                    color: 'var(--color-ink-primary)',
+                                    transition: 'all 0.15s ease',
+                                    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+                                  }}
+                                >
+                                  <Edit3 size={13} />
+                                  <span>Edit</span>
+                                </Link>
 
-                              <Link
-                                to={`/project/${project.id}`}
-                                style={{
-                                  flex: 1,
-                                  height: '32px',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: '6px',
-                                  fontSize: '12px',
-                                  fontWeight: 600,
-                                  padding: '0 12px',
-                                  borderRadius: '7px',
-                                  textDecoration: 'none',
-                                  boxSizing: 'border-box',
-                                  backgroundColor: 'var(--color-ink-primary)',
-                                  color: '#ffffff',
-                                  transition: 'all 0.15s ease',
-                                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.12)',
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.opacity = '0.9';
-                                  e.currentTarget.style.transform = 'translateY(-1px)';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.opacity = '1';
-                                  e.currentTarget.style.transform = 'translateY(0)';
-                                }}
-                              >
-                                <Eye size={13} />
-                                <span>View</span>
-                              </Link>
+                                <Link
+                                  to={`/project/${project.id}`}
+                                  style={{
+                                    flex: 1,
+                                    height: '32px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '6px',
+                                    fontSize: '12px',
+                                    fontWeight: 600,
+                                    padding: '0 12px',
+                                    borderRadius: '7px',
+                                    textDecoration: 'none',
+                                    boxSizing: 'border-box',
+                                    backgroundColor: 'var(--color-ink-primary)',
+                                    color: '#ffffff',
+                                    transition: 'all 0.15s ease',
+                                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.12)',
+                                  }}
+                                >
+                                  <Eye size={13} />
+                                  <span>View</span>
+                                </Link>
 
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteProject(project.id, project.title)}
-                                title="Delete Project"
-                                aria-label={`Delete ${project.title}`}
-                                style={{
-                                  width: '32px',
-                                  height: '32px',
-                                  minWidth: '32px',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  padding: 0,
-                                  borderRadius: '7px',
-                                  border: '1px solid transparent',
-                                  backgroundColor: 'transparent',
-                                  color: 'var(--color-ink-tertiary)',
-                                  boxSizing: 'border-box',
-                                  cursor: 'pointer',
-                                  transition: 'all 0.15s ease',
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)';
-                                  e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.2)';
-                                  e.currentTarget.style.color = '#dc2626';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor = 'transparent';
-                                  e.currentTarget.style.borderColor = 'transparent';
-                                  e.currentTarget.style.color = 'var(--color-ink-tertiary)';
-                                }}
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteProject(project.id, project.title)}
+                                  title="Delete Project"
+                                  aria-label={`Delete ${project.title}`}
+                                  style={{
+                                    width: '32px',
+                                    height: '32px',
+                                    minWidth: '32px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: 0,
+                                    borderRadius: '7px',
+                                    border: '1px solid transparent',
+                                    backgroundColor: 'transparent',
+                                    color: 'var(--color-ink-tertiary)',
+                                    boxSizing: 'border-box',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s ease',
+                                  }}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <Link
+                                  to={`/project/${project.id}`}
+                                  style={{
+                                    flex: 1,
+                                    height: '32px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '6px',
+                                    fontSize: '12px',
+                                    fontWeight: 600,
+                                    padding: '0 12px',
+                                    borderRadius: '7px',
+                                    textDecoration: 'none',
+                                    boxSizing: 'border-box',
+                                    backgroundColor: 'var(--color-ink-primary)',
+                                    color: '#ffffff',
+                                    transition: 'all 0.15s ease',
+                                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.12)',
+                                  }}
+                                >
+                                  <Eye size={13} />
+                                  <span>View</span>
+                                </Link>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteProject(project.id, project.title)}
+                                  title="Delete Project"
+                                  aria-label={`Delete ${project.title}`}
+                                  style={{
+                                    width: '32px',
+                                    height: '32px',
+                                    minWidth: '32px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: 0,
+                                    borderRadius: '7px',
+                                    border: '1px solid transparent',
+                                    backgroundColor: 'transparent',
+                                    color: 'var(--color-ink-tertiary)',
+                                    boxSizing: 'border-box',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s ease',
+                                  }}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </>
+                            )
                           ) : (
-                            <>
-                              <Link
-                                to={`/project/${project.id}`}
-                                style={{
-                                  flex: 1,
-                                  height: '32px',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: '6px',
-                                  fontSize: '12px',
-                                  fontWeight: 600,
-                                  padding: '0 12px',
-                                  borderRadius: '7px',
-                                  textDecoration: 'none',
-                                  boxSizing: 'border-box',
-                                  backgroundColor: 'var(--color-ink-primary)',
-                                  color: '#ffffff',
-                                  transition: 'all 0.15s ease',
-                                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.12)',
-                                }}
-                              >
-                                <Eye size={13} />
-                                <span>View</span>
-                              </Link>
-
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteProject(project.id, project.title)}
-                                title="Delete Project"
-                                aria-label={`Delete ${project.title}`}
-                                style={{
-                                  width: '32px',
-                                  height: '32px',
-                                  minWidth: '32px',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  padding: 0,
-                                  borderRadius: '7px',
-                                  border: '1px solid transparent',
-                                  backgroundColor: 'transparent',
-                                  color: 'var(--color-ink-tertiary)',
-                                  boxSizing: 'border-box',
-                                  cursor: 'pointer',
-                                  transition: 'all 0.15s ease',
-                                }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)';
-                                  e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.2)';
-                                  e.currentTarget.style.color = '#dc2626';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor = 'transparent';
-                                  e.currentTarget.style.borderColor = 'transparent';
-                                  e.currentTarget.style.color = 'var(--color-ink-tertiary)';
-                                }}
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      ) : (
-                        <div
-                          style={{
-                            padding: '10px 14px',
-                            borderTop: '1px solid var(--color-border)',
-                            backgroundColor: 'var(--color-paper)',
-                          }}
-                        >
-                          <Link
-                            to={`/project/${project.id}`}
-                            style={{
-                              width: '100%',
-                              height: '32px',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '6px',
-                              fontSize: '12px',
-                              fontWeight: 600,
-                              padding: '0 12px',
-                              borderRadius: '7px',
-                              textDecoration: 'none',
-                              boxSizing: 'border-box',
-                              backgroundColor: 'var(--color-surface)',
-                              border: '1px solid var(--color-border)',
-                              color: 'var(--color-ink-primary)',
-                              transition: 'all 0.15s ease',
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = 'var(--color-ink-primary)';
-                              e.currentTarget.style.color = '#ffffff';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = 'var(--color-surface)';
-                              e.currentTarget.style.color = 'var(--color-ink-primary)';
-                            }}
-                          >
-                            <Eye size={13} />
-                            <span>View Project</span>
-                          </Link>
-                        </div>
-                      )}
+                            <Link
+                              to={`/project/${project.id}`}
+                              style={{
+                                width: '100%',
+                                height: '32px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '6px',
+                                fontSize: '12px',
+                                fontWeight: 600,
+                                padding: '0 12px',
+                                borderRadius: '7px',
+                                textDecoration: 'none',
+                                boxSizing: 'border-box',
+                                backgroundColor: 'var(--color-surface)',
+                                border: '1px solid var(--color-border)',
+                                color: 'var(--color-ink-primary)',
+                                transition: 'all 0.15s ease',
+                              }}
+                            >
+                              <Eye size={13} />
+                              <span>View Project</span>
+                            </Link>
+                          )
+                        }
+                      />
                     </div>
                   ))}
                 </div>

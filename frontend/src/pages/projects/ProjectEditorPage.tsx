@@ -50,7 +50,7 @@ export default function ProjectEditorPage() {
   const [slugId, setSlugId] = useState('');
   const [slugTouched, setSlugTouched] = useState(false);
   const [type, setType] = useState<'Project' | 'Tutorial'>(initialType);
-  const [level, setLevel] = useState<number>(2);
+  const [level, setLevel] = useState<number>(1);
   const [description, setDescription] = useState('');
 
   // Media
@@ -124,7 +124,7 @@ export default function ProjectEditorPage() {
         setSlugId(existing.id || '');
         setSlugTouched(true);
         setType((existing.type as 'Project' | 'Tutorial') || 'Project');
-        setLevel(existing.level || 2);
+        setLevel(existing.level || 1);
         setDescription(existing.description || '');
         setCoverImage(existing.coverImage || '');
         setVideoLink(existing.videoLink || '');
@@ -290,7 +290,10 @@ export default function ProjectEditorPage() {
       if (!v.isValid) newErrors.coverImage = v.error || 'Invalid Cover Image URL';
     }
 
-    if (projectMdFile.trim()) {
+    // Documentation URL (.md) is strictly required
+    if (!projectMdFile.trim()) {
+      newErrors.projectMdFile = 'Documentation URL (.md file) is required.';
+    } else {
       const v = validateUrl(projectMdFile, 'Markdown Guide URL');
       if (!v.isValid) newErrors.projectMdFile = v.error || 'Invalid Markdown Guide URL';
     }
@@ -310,17 +313,30 @@ export default function ProjectEditorPage() {
       if (!v.isValid) newErrors.docLink = v.error || 'Invalid Documentation Link';
     }
 
-    for (let i = 0; i < firmwares.length; i++) {
-      const fw = firmwares[i];
-      if (fw.name && containsInappropriateWords(fw.name)) {
-        newErrors[`fw_${i}_name`] = `Inappropriate language in Firmware edition #${i + 1}.`;
-      }
-      if (fw.versionNote && containsInappropriateWords(fw.versionNote)) {
-        newErrors[`fw_${i}_note`] = `Inappropriate language in Firmware release notes #${i + 1}.`;
-      }
-      if (fw.firmwareUrl.trim()) {
-        const v = validateUrl(fw.firmwareUrl, `Firmware #${i + 1} URL`);
-        if (!v.isValid) newErrors[`fw_${i}_url`] = v.error || 'Invalid Firmware URL';
+    // Firmware builds validation (Version, Flash Address, .bin URL are required)
+    if (firmwares.length === 0) {
+      newErrors.firmwares = 'At least one firmware build configuration is required.';
+    } else {
+      for (let i = 0; i < firmwares.length; i++) {
+        const fw = firmwares[i];
+        if (!fw.version.trim()) {
+          newErrors[`fw_${i}_version`] = `Firmware Version is required for Build #${i + 1}.`;
+        }
+        if (!fw.flashAddress || !fw.flashAddress.trim()) {
+          newErrors[`fw_${i}_address`] = `Flash Address is required for Build #${i + 1} (e.g. 0x0000 or 0x00).`;
+        }
+        if (!fw.firmwareUrl.trim()) {
+          newErrors[`fw_${i}_url`] = `Firmware Binary URL (.bin) is required for Build #${i + 1}.`;
+        } else {
+          const v = validateUrl(fw.firmwareUrl, `Firmware #${i + 1} URL`);
+          if (!v.isValid) newErrors[`fw_${i}_url`] = v.error || 'Invalid Firmware URL';
+        }
+        if (fw.name && containsInappropriateWords(fw.name)) {
+          newErrors[`fw_${i}_name`] = `Inappropriate language in Firmware edition #${i + 1}.`;
+        }
+        if (fw.versionNote && containsInappropriateWords(fw.versionNote)) {
+          newErrors[`fw_${i}_note`] = `Inappropriate language in Firmware release notes #${i + 1}.`;
+        }
       }
     }
 
@@ -410,7 +426,7 @@ export default function ProjectEditorPage() {
         publishDate: nextStatus === 'published' ? (publishDate || currentDate) : (publishDate || ''),
         flashCount: flashCount || 0,
         description: censorBadWords(description.trim()) || 'Work in progress draft.',
-        coverImage: coverImage.trim() || 'https://raw.githubusercontent.com/MukeshSankhla/ESP32_P4_DSI/main/images/DIY.gif',
+        coverImage: coverImage.trim() || '/images/Place Holder.png',
         videoLink: videoLink.trim() || undefined,
         projectMdFile: projectMdFile.trim() || null,
         markdownContent: mdPreviewContent ? censorBadWords(mdPreviewContent) : undefined,
@@ -950,7 +966,7 @@ export default function ProjectEditorPage() {
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
                   <label style={{ fontSize: 'var(--text-xs)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-ink-secondary)' }}>
-                    Documentation URL (.md file)
+                    Documentation URL (.md file) <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   {projectMdFile.trim() && (
                     <button
@@ -966,6 +982,7 @@ export default function ProjectEditorPage() {
                   )}
                 </div>
                 <input
+                  id="input-projectMdFile"
                   type="url"
                   value={projectMdFile}
                   onChange={(e) => {
@@ -973,6 +990,13 @@ export default function ProjectEditorPage() {
                     const normalized = convertGithubBlobToRaw(val);
                     setProjectMdFile(normalized);
                     if (mdPreviewError) setMdPreviewError(null);
+                    if (fieldErrors.projectMdFile) {
+                      setFieldErrors((prev) => {
+                        const next = { ...prev };
+                        delete next.projectMdFile;
+                        return next;
+                      });
+                    }
                   }}
                   onBlur={(e) => {
                     const normalized = convertGithubBlobToRaw(e.target.value);
@@ -986,7 +1010,7 @@ export default function ProjectEditorPage() {
                     width: '100%',
                     padding: '10px 14px',
                     backgroundColor: 'var(--color-paper)',
-                    border: '1px solid var(--color-border)',
+                    border: fieldErrors.projectMdFile ? '1px solid #ef4444' : '1px solid var(--color-border)',
                     borderRadius: 'var(--radius-md)',
                     fontSize: 'var(--text-sm)',
                     fontFamily: 'monospace',
@@ -994,6 +1018,12 @@ export default function ProjectEditorPage() {
                     outline: 'none',
                   }}
                 />
+                {fieldErrors.projectMdFile && (
+                  <div style={{ marginTop: '6px', color: '#dc2626', fontSize: 'var(--text-xs)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <AlertCircle size={13} />
+                    <span>{fieldErrors.projectMdFile}</span>
+                  </div>
+                )}
                 <span style={{ display: 'block', fontSize: '10.5px', color: 'var(--color-ink-tertiary)', marginTop: '4px' }}>
                   GitHub links (e.g. <code>github.com/.../blob/.../readme.md</code>) are automatically converted to raw content links.
                 </span>
@@ -1111,18 +1141,28 @@ export default function ProjectEditorPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
                       <div>
                         <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--color-ink-tertiary)', marginBottom: '4px' }}>
-                          Version
+                          Version <span style={{ color: '#ef4444' }}>*</span>
                         </label>
                         <input
+                          id={`input-fw_${idx}_version`}
                           type="text"
                           value={fw.version}
-                          onChange={(e) => handleFirmwareChange(idx, 'version', e.target.value)}
+                          onChange={(e) => {
+                            handleFirmwareChange(idx, 'version', e.target.value);
+                            if (fieldErrors[`fw_${idx}_version`]) {
+                              setFieldErrors((prev) => {
+                                const next = { ...prev };
+                                delete next[`fw_${idx}_version`];
+                                return next;
+                              });
+                            }
+                          }}
                           placeholder="v1.0.0"
                           style={{
                             width: '100%',
                             padding: '8px 10px',
                             backgroundColor: 'var(--color-surface)',
-                            border: '1px solid var(--color-border)',
+                            border: fieldErrors[`fw_${idx}_version`] ? '1px solid #ef4444' : '1px solid var(--color-border)',
                             borderRadius: 'var(--radius-md)',
                             fontSize: 'var(--text-xs)',
                             fontFamily: 'monospace',
@@ -1130,6 +1170,11 @@ export default function ProjectEditorPage() {
                             outline: 'none',
                           }}
                         />
+                        {fieldErrors[`fw_${idx}_version`] && (
+                          <span style={{ display: 'block', color: '#dc2626', fontSize: '10px', marginTop: '3px' }}>
+                            {fieldErrors[`fw_${idx}_version`]}
+                          </span>
+                        )}
                       </div>
                       <div>
                         <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--color-ink-tertiary)', marginBottom: '4px' }}>
@@ -1154,18 +1199,28 @@ export default function ProjectEditorPage() {
                       </div>
                       <div>
                         <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--color-ink-tertiary)', marginBottom: '4px' }}>
-                          Flash Address
+                          Flash Address <span style={{ color: '#ef4444' }}>*</span>
                         </label>
                         <input
+                          id={`input-fw_${idx}_address`}
                           type="text"
-                          value={fw.flashAddress || '0x00'}
-                          onChange={(e) => handleFirmwareChange(idx, 'flashAddress', e.target.value)}
-                          placeholder="0x00"
+                          value={fw.flashAddress || ''}
+                          onChange={(e) => {
+                            handleFirmwareChange(idx, 'flashAddress', e.target.value);
+                            if (fieldErrors[`fw_${idx}_address`]) {
+                              setFieldErrors((prev) => {
+                                const next = { ...prev };
+                                delete next[`fw_${idx}_address`];
+                                return next;
+                              });
+                            }
+                          }}
+                          placeholder="0x0000"
                           style={{
                             width: '100%',
                             padding: '8px 10px',
                             backgroundColor: 'var(--color-surface)',
-                            border: '1px solid var(--color-border)',
+                            border: fieldErrors[`fw_${idx}_address`] ? '1px solid #ef4444' : '1px solid var(--color-border)',
                             borderRadius: 'var(--radius-md)',
                             fontSize: 'var(--text-xs)',
                             fontFamily: 'monospace',
@@ -1173,17 +1228,32 @@ export default function ProjectEditorPage() {
                             outline: 'none',
                           }}
                         />
+                        {fieldErrors[`fw_${idx}_address`] && (
+                          <span style={{ display: 'block', color: '#dc2626', fontSize: '10px', marginTop: '3px' }}>
+                            {fieldErrors[`fw_${idx}_address`]}
+                          </span>
+                        )}
                       </div>
                     </div>
 
                     <div style={{ marginBottom: 'var(--space-3)' }}>
                       <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--color-ink-tertiary)', marginBottom: '4px' }}>
-                        Firmware Binary URL (.bin)
+                        Firmware Binary URL (.bin) <span style={{ color: '#ef4444' }}>*</span>
                       </label>
                       <input
+                        id={`input-fw_${idx}_url`}
                         type="url"
                         value={fw.firmwareUrl}
-                        onChange={(e) => handleFirmwareChange(idx, 'firmwareUrl', e.target.value)}
+                        onChange={(e) => {
+                          handleFirmwareChange(idx, 'firmwareUrl', e.target.value);
+                          if (fieldErrors[`fw_${idx}_url`]) {
+                            setFieldErrors((prev) => {
+                              const next = { ...prev };
+                              delete next[`fw_${idx}_url`];
+                              return next;
+                            });
+                          }
+                        }}
                         onBlur={(e) => {
                           const converted = convertGithubBlobToRaw(e.target.value);
                           if (converted !== e.target.value) {
@@ -1195,7 +1265,7 @@ export default function ProjectEditorPage() {
                           width: '100%',
                           padding: '8px 10px',
                           backgroundColor: 'var(--color-surface)',
-                          border: '1px solid var(--color-border)',
+                          border: fieldErrors[`fw_${idx}_url`] ? '1px solid #ef4444' : '1px solid var(--color-border)',
                           borderRadius: 'var(--radius-md)',
                           fontSize: 'var(--text-xs)',
                           fontFamily: 'monospace',
@@ -1203,6 +1273,11 @@ export default function ProjectEditorPage() {
                           outline: 'none',
                         }}
                       />
+                      {fieldErrors[`fw_${idx}_url`] && (
+                        <span style={{ display: 'block', color: '#dc2626', fontSize: '10px', marginTop: '3px' }}>
+                          {fieldErrors[`fw_${idx}_url`]}
+                        </span>
+                      )}
                       <span style={{ display: 'block', fontSize: '10px', color: 'var(--color-ink-tertiary)', marginTop: '4px' }}>
                         GitHub links (e.g. <code>github.com/.../blob/...</code>) are automatically converted to raw download links.
                       </span>
