@@ -2481,4 +2481,24 @@ button {
   }
 }
 
+/* 3-column Profile Projects Grid */
+.profile-projects-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-6);
+}
+
+@media (max-width: 1024px) {
+  .profile-projects-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .profile-projects-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
 

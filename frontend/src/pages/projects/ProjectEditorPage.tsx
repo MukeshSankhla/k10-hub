@@ -1470,7 +1470,7 @@ export default function ProjectEditorPage() {
                   >
                     <option value={1}>Beginner</option>
                     <option value={2}>Intermediate</option>
-                    <option value={3}>Advance</option>
+                    <option value={3}>Advanced</option>
                     <option value={4}>Expert</option>
                   </select>
                 </div>

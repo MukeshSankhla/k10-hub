@@ -82,20 +82,6 @@ export default function FeaturedProjects() {
               >
                 Featured Projects
               </h2>
-              {featuredProjects.length > 0 && (
-                <span
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    padding: '2px 7px',
-                    borderRadius: 'var(--radius-full)',
-                    backgroundColor: 'var(--color-accent-muted)',
-                    color: 'var(--color-accent)',
-                  }}
-                >
-                  {featuredProjects.length}
-                </span>
-              )}
             </div>
 
             <Link
@@ -180,20 +166,6 @@ export default function FeaturedProjects() {
               >
                 Featured Tutorials
               </h2>
-              {featuredTutorials.length > 0 && (
-                <span
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    padding: '2px 7px',
-                    borderRadius: 'var(--radius-full)',
-                    backgroundColor: 'rgba(202, 138, 4, 0.12)',
-                    color: '#ca8a04',
-                  }}
-                >
-                  {featuredTutorials.length}
-                </span>
-              )}
             </div>
 
             <Link

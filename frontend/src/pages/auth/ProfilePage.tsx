@@ -34,6 +34,8 @@ import {
   Bookmark,
   Copy,
   Check,
+  Search,
+  X,
 } from 'lucide-react';
 import { ProjectDetail } from '../../config/projectsData';
 import { toast } from '../../contexts/ToastContext';
@@ -287,13 +289,34 @@ export default function ProfilePage() {
     });
   }, [projectsList, isOwnProfile, projectStatusFilter, bookmarkedProjects]);
 
+  const [searchQuery, setSearchQuery] = useState('');
+
   const displayedProjects = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
     return statusFilteredProjects.filter((p) => {
-      if (projectTypeFilter === 'all') return true;
-      const pType = (p.type || 'Project').toLowerCase();
-      return pType === projectTypeFilter.toLowerCase();
+      if (projectTypeFilter !== 'all') {
+        const pType = (p.type || 'Project').toLowerCase();
+        if (pType !== projectTypeFilter.toLowerCase()) return false;
+      }
+      if (!q) return true;
+      const titleMatch = (p.title || '').toLowerCase().includes(q);
+      const descMatch = (p.description || '').toLowerCase().includes(q);
+      const tagMatch = Array.isArray(p.tags) && p.tags.some((t: string) => t.toLowerCase().includes(q));
+      const authorMatch = (p.author || '').toLowerCase().includes(q);
+      return titleMatch || descMatch || tagMatch || authorMatch;
     });
-  }, [statusFilteredProjects, projectTypeFilter]);
+  }, [statusFilteredProjects, projectTypeFilter, searchQuery]);
+
+  // Pagination / Load More batching (6 items at a time)
+  const [visibleLimit, setVisibleLimit] = useState(6);
+
+  useEffect(() => {
+    setVisibleLimit(6);
+  }, [projectStatusFilter, projectTypeFilter, searchQuery]);
+
+  const visibleProjects = useMemo(() => {
+    return displayedProjects.slice(0, visibleLimit);
+  }, [displayedProjects, visibleLimit]);
 
   const typeCounts = useMemo(() => {
     return {
@@ -1089,7 +1112,13 @@ export default function ProfilePage() {
                       color: 'var(--color-ink-secondary)',
                     }}
                   >
-                    {role === 'user' && isOwnProfile ? bookmarkedProjects.length : projectStatusFilter === 'bookmarked' ? bookmarkedProjects.length : projectsList.length}
+                    {searchQuery.trim()
+                      ? `${displayedProjects.length} found`
+                      : role === 'user' && isOwnProfile
+                      ? bookmarkedProjects.length
+                      : projectStatusFilter === 'bookmarked'
+                      ? bookmarkedProjects.length
+                      : projectsList.length}
                   </span>
                 </div>
 
@@ -1306,63 +1335,126 @@ export default function ProfilePage() {
                 </div>
               </div>
 
+              {/* Search Input for Contributed Projects & Tutorials */}
+              <div style={{ marginBottom: 'var(--space-6)', position: 'relative' }}>
+                <Search
+                  size={15}
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--color-ink-tertiary)',
+                    pointerEvents: 'none',
+                  }}
+                />
+                <input
+                  type="text"
+                  placeholder="Search contributed projects, tutorials, or tags..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: '38px',
+                    paddingLeft: '36px',
+                    paddingRight: searchQuery ? '36px' : '12px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--color-border)',
+                    backgroundColor: 'var(--color-paper)',
+                    color: 'var(--color-ink-primary)',
+                    fontSize: 'var(--text-sm)',
+                    outline: 'none',
+                    transition: 'border-color 0.15s ease, background-color 0.15s ease',
+                    boxSizing: 'border-box',
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-accent)';
+                    e.currentTarget.style.backgroundColor = 'var(--color-surface)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--color-border)';
+                    e.currentTarget.style.backgroundColor = 'var(--color-paper)';
+                  }}
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    title="Clear search"
+                    aria-label="Clear search"
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--color-ink-tertiary)',
+                      cursor: 'pointer',
+                      padding: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
               {displayedProjects && displayedProjects.length > 0 ? (
-                <div
-                  className="featured-showcase-grid"
-                  role="list"
-                  aria-label="Profile UNIHIKER K10 Projects & Tutorials"
-                >
-                  {displayedProjects.map((project) => (
-                    <div key={project.id} role="listitem" style={{ height: '100%' }}>
-                      <ProjectCard
-                        project={project}
-                        isCurrentAuthor={() => isOwnProfile}
-                        statusBadge={
-                          isOwnProfile ? (
-                            <span
-                              style={{
-                                fontSize: '9.5px',
-                                fontWeight: 700,
-                                padding: '3px 8px',
-                                borderRadius: '6px',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '5px',
-                                backdropFilter: 'blur(6px)',
-                                backgroundColor:
-                                  project.status === 'draft'
-                                    ? 'rgba(51, 65, 85, 0.88)'
-                                    : project.status === 'pending_approval'
-                                    ? 'rgba(180, 83, 9, 0.9)'
-                                    : project.status === 'rejected'
-                                    ? 'rgba(185, 28, 28, 0.9)'
-                                    : 'rgba(21, 128, 61, 0.9)',
-                                color: '#ffffff',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                              }}
-                            >
+                <>
+                  <div
+                    className="profile-projects-grid"
+                    role="list"
+                    aria-label="Profile UNIHIKER K10 Projects & Tutorials"
+                  >
+                    {visibleProjects.map((project) => (
+                      <div key={project.id} role="listitem" style={{ height: '100%' }}>
+                        <ProjectCard
+                          project={project}
+                          isCurrentAuthor={() => isOwnProfile}
+                          compactLevelBadge={true}
+                          statusBadge={
+                            isOwnProfile ? (
                               <span
+                                title={`Status: ${project.status === 'pending_approval' ? 'In Review' : (project.status || 'Published')}`}
                                 style={{
-                                  width: 6,
-                                  height: 6,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: 20,
+                                  height: 20,
                                   borderRadius: '50%',
-                                  backgroundColor:
-                                    project.status === 'draft'
-                                      ? '#94a3b8'
-                                      : project.status === 'pending_approval'
-                                      ? '#fde047'
-                                      : project.status === 'rejected'
-                                      ? '#fca5a5'
-                                      : '#4ade80',
-                                  display: 'inline-block',
+                                  backgroundColor: 'rgba(0, 0, 0, 0.65)',
+                                  backdropFilter: 'blur(4px)',
+                                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                                  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.3)',
                                 }}
-                              />
-                              {project.status === 'pending_approval' ? 'In Review' : (project.status || 'Published')}
-                            </span>
-                          ) : undefined
-                        }
+                              >
+                                <span
+                                  style={{
+                                    width: 8,
+                                    height: 8,
+                                    borderRadius: '50%',
+                                    backgroundColor:
+                                      project.status === 'draft'
+                                        ? '#94a3b8'
+                                        : project.status === 'pending_approval'
+                                        ? '#fde047'
+                                        : project.status === 'rejected'
+                                        ? '#ef4444'
+                                        : '#22c55e',
+                                    display: 'inline-block',
+                                    boxShadow:
+                                      project.status === 'rejected'
+                                        ? '0 0 6px #ef4444'
+                                        : (project.status === 'draft' ? 'none' : '0 0 6px #22c55e'),
+                                  }}
+                                />
+                              </span>
+                            ) : undefined
+                          }
                         actionToolbar={
                           isOwnProfile ? (
                             projectStatusFilter === 'bookmarked' ? (
@@ -1583,6 +1675,31 @@ export default function ProfilePage() {
                     </div>
                   ))}
                 </div>
+
+                {visibleLimit < displayedProjects.length && (
+                  <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'var(--space-8)' }}>
+                    <button
+                      type="button"
+                      onClick={() => setVisibleLimit((prev) => prev + 6)}
+                      className="btn btn--secondary"
+                      style={{
+                        padding: '10px 24px',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        borderRadius: '8px',
+                        boxShadow: 'var(--shadow-sm)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <Plus size={14} />
+                      <span>Show More ({displayedProjects.length - visibleLimit} remaining)</span>
+                    </button>
+                  </div>
+                )}
+              </>
               ) : (
                 <div
                   style={{
@@ -1595,7 +1712,9 @@ export default function ProfilePage() {
                 >
                   <FolderGit2 size={36} style={{ color: 'var(--color-ink-tertiary)', margin: '0 auto var(--space-3)', opacity: 0.6 }} />
                   <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--color-ink-primary)', margin: '0 0 var(--space-1) 0' }}>
-                    {projectTypeFilter !== 'all'
+                    {searchQuery
+                      ? `No results matching "${searchQuery}"`
+                      : projectTypeFilter !== 'all'
                       ? `No ${projectTypeFilter === 'Project' ? 'projects' : 'tutorials'} found`
                       : projectStatusFilter === 'bookmarked'
                       ? 'No Bookmarked Builds Yet'
@@ -1608,7 +1727,9 @@ export default function ProfilePage() {
                       : 'No contributions yet'}
                   </h3>
                   <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-ink-secondary)', maxWidth: 420, margin: '0 auto', lineHeight: 1.5 }}>
-                    {projectTypeFilter !== 'all'
+                    {searchQuery
+                      ? 'Try adjusting your search terms or clearing the search query to view all items.'
+                      : projectTypeFilter !== 'all'
                       ? `There are no ${projectTypeFilter.toLowerCase()}s under the selected filter criteria.`
                       : projectStatusFilter === 'bookmarked'
                       ? 'Projects and tutorials you bookmark across the platform will be collected here for quick reference and direct Web Serial flashing.'
@@ -1618,13 +1739,24 @@ export default function ProfilePage() {
                       ? 'Submissions waiting for administrative verification will appear here.'
                       : 'Hardware projects, technical tutorials, and firmware builds created by this author will appear here.'}
                   </p>
-                  {projectStatusFilter === 'bookmarked' && (
+                  {searchQuery ? (
+                    <div style={{ marginTop: 'var(--space-4)' }}>
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery('')}
+                        className="btn btn--secondary btn--sm"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        <X size={13} /> Clear Search
+                      </button>
+                    </div>
+                  ) : projectStatusFilter === 'bookmarked' ? (
                     <div style={{ marginTop: 'var(--space-4)' }}>
                       <Link to="/projects" className="btn btn--primary btn--sm">
                         Explore Catalog & Bookmark Builds
                       </Link>
                     </div>
-                  )}
+                  ) : null}
                 </div>
               )}
             </div>

@@ -25,11 +25,31 @@ export function getLevelLabel(level: number | string | undefined): string {
     case 2:
       return 'Intermediate';
     case 3:
-      return 'Advance';
+      return 'Advanced';
     case 4:
       return 'Expert';
     default:
       return typeof level === 'string' && level ? level : 'Beginner';
+  }
+}
+
+export function getShortLevelLabel(level: number | string | undefined): string {
+  const num = Number(level);
+  switch (num) {
+    case 1:
+      return 'B';
+    case 2:
+      return 'I';
+    case 3:
+      return 'A';
+    case 4:
+      return 'E';
+    default:
+      if (typeof level === 'string' && level.trim()) {
+        const first = level.trim().charAt(0).toUpperCase();
+        if (['B', 'I', 'A', 'E'].includes(first)) return first;
+      }
+      return 'B';
   }
 }
 
@@ -38,6 +58,7 @@ export interface ProjectCardProps {
   isCurrentAuthor?: (name: string, id?: string) => boolean;
   actionToolbar?: React.ReactNode;
   statusBadge?: React.ReactNode;
+  compactLevelBadge?: boolean;
 }
 
 /**
@@ -49,6 +70,7 @@ export default function ProjectCard({
   isCurrentAuthor,
   actionToolbar,
   statusBadge,
+  compactLevelBadge,
 }: ProjectCardProps) {
   const { user, profile } = useAuth();
   const authorInfo = resolveProjectAuthor(project, user, profile);
@@ -131,22 +153,47 @@ export default function ProjectCard({
             }}
           />
 
-          {/* Top-Right Status Badge (if provided, e.g. in author profile view) */}
-          {statusBadge && (
+          {/* Top-Right Badges Container (Status Badge + Simple Star for Featured) */}
+          {(statusBadge || isFeatured) && (
             <div
               style={{
                 position: 'absolute',
                 top: 10,
                 right: 10,
-                zIndex: 4,
+                zIndex: 5,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
               }}
             >
+              {isFeatured && (
+                <div
+                  title="Featured"
+                  aria-label="Featured Build"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 22,
+                    height: 22,
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(0, 0, 0, 0.72)',
+                    backdropFilter: 'blur(4px)',
+                    border: '1px solid rgba(245, 158, 11, 0.6)',
+                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.35)',
+                    color: '#f59e0b',
+                  }}
+                >
+                  <Star size={12} fill="#f59e0b" color="#f59e0b" />
+                </div>
+              )}
               {statusBadge}
             </div>
           )}
 
           {/* Top-Left Level Badge */}
           <div
+            title={`Difficulty: ${getLevelLabel(project.level)}`}
             style={{
               position: 'absolute',
               top: 12,
@@ -154,15 +201,20 @@ export default function ProjectCard({
               backgroundColor: 'rgba(0, 0, 0, 0.75)',
               backdropFilter: 'blur(4px)',
               color: '#fff',
-              fontSize: '10px',
-              fontWeight: 700,
-              padding: '3px 8px',
+              fontSize: compactLevelBadge ? '11px' : '10px',
+              fontWeight: 800,
+              minWidth: compactLevelBadge ? 22 : undefined,
+              height: compactLevelBadge ? 22 : undefined,
+              display: compactLevelBadge ? 'inline-flex' : undefined,
+              alignItems: compactLevelBadge ? 'center' : undefined,
+              justifyContent: compactLevelBadge ? 'center' : undefined,
+              padding: compactLevelBadge ? '0 5px' : '3px 8px',
               borderRadius: '6px',
               textTransform: 'uppercase',
               zIndex: 2,
             }}
           >
-            {getLevelLabel(project.level)}
+            {compactLevelBadge ? getShortLevelLabel(project.level) : getLevelLabel(project.level)}
           </div>
 
           {/* Bottom-Left Bookmark Button */}
@@ -273,32 +325,6 @@ export default function ProjectCard({
             <Heart size={14} fill={isLiked ? '#fff' : 'none'} />
           </button>
 
-          {/* Featured Pill if marked as featured (offset to avoid overlapping bottom-left bookmark) */}
-          {isFeatured && (
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 10,
-                left: 44,
-                backgroundColor: 'rgba(245, 158, 11, 0.95)',
-                backdropFilter: 'blur(4px)',
-                color: '#fff',
-                fontSize: '9.5px',
-                fontWeight: 700,
-                padding: '2px 7px',
-                borderRadius: '4px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '3px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-                zIndex: 2,
-                boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
-              }}
-            >
-              <Star size={10} fill="#fff" /> Featured
-            </div>
-          )}
 
           {/* Diagonal Top-Right Corner Ribbon Indicator */}
           <div

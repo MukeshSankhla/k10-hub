@@ -24,7 +24,7 @@ import {
 const LEVEL_CONFIG = [
   {
     level: 1,
-    name: 'Beginners',
+    name: 'Beginner',
     tagline: 'First Blink, GPIO & Primitives',
     description: 'Basic hardware control, onboard RGB LEDs, tactile buttons, and first sketch structure.',
     color: '#16a34a',
@@ -33,7 +33,7 @@ const LEVEL_CONFIG = [
   },
   {
     level: 2,
-    name: 'Inter',
+    name: 'Intermediate',
     tagline: 'Sensors, Audio & LCD Display',
     description: 'Color display interfaces, analog/I2C sensor integration, buzzer sound synthesis, and events.',
     color: '#0284c7',
@@ -42,7 +42,7 @@ const LEVEL_CONFIG = [
   },
   {
     level: 3,
-    name: 'Advance',
+    name: 'Advanced',
     tagline: 'IoT, Wireless & Telemetry HUD',
     description: 'Wi-Fi web servers, low-latency ESP-NOW mesh networking, MQTT, and live PC hardware telemetry.',
     color: '#7c3aed',
@@ -356,9 +356,9 @@ export default function ProjectsGalleryPage() {
                   }}
                 >
                   <option value="all">All difficulties</option>
-                  <option value="1">Beginners</option>
-                  <option value="2">Inter</option>
-                  <option value="3">Advance</option>
+                  <option value="1">Beginner</option>
+                  <option value="2">Intermediate</option>
+                  <option value="3">Advanced</option>
                   <option value="4">Expert</option>
                 </select>
                 <ChevronDown
