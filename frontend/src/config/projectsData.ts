@@ -10,6 +10,13 @@ export interface FirmwareConfig {
   versionNote: string;
 }
 
+export interface ProjectAttachment {
+  name: string;
+  fileUrl: string;
+  fileSize?: string;
+  fileType?: string;
+}
+
 export interface ProjectDetail {
   id: string;
   title: string;
@@ -37,6 +44,7 @@ export interface ProjectDetail {
   license?: string;
   tags?: string[];
   firmwares: FirmwareConfig[];
+  attachments?: ProjectAttachment[];
 }
 
 export const AVAILABLE_TOPICS = [

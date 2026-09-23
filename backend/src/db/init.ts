@@ -62,12 +62,13 @@ export async function initDatabase(): Promise<void> {
       license TEXT DEFAULT 'MIT',
       tags TEXT,
       firmwares TEXT,
+      attachments TEXT,
       created_at INTEGER DEFAULT (unixepoch()),
       updated_at INTEGER DEFAULT (unixepoch())
     );
   `);
 
-  // Ensure project_md_file column exists on existing installations
+  // Ensure project_md_file and attachments columns exist on existing installations
   try {
     const tableInfo = await client.execute("PRAGMA table_info(projects)");
     const hasProjectMdFile = tableInfo.rows.some((r: any) => r.name === 'project_md_file');
@@ -75,8 +76,13 @@ export async function initDatabase(): Promise<void> {
       await client.execute("ALTER TABLE projects ADD COLUMN project_md_file TEXT");
       console.log('✅ Added missing project_md_file column to projects table.');
     }
+    const hasAttachments = tableInfo.rows.some((r: any) => r.name === 'attachments');
+    if (!hasAttachments) {
+      await client.execute("ALTER TABLE projects ADD COLUMN attachments TEXT");
+      console.log('✅ Added missing attachments column to projects table.');
+    }
   } catch (colErr) {
-    console.warn('Column check notice for project_md_file:', colErr);
+    console.warn('Column check notice for project schema migration:', colErr);
   }
 
   // Ensure users table does not have dangling foreign key to dropped authors table

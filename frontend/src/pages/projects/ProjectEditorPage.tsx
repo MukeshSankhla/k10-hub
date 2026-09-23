@@ -5,7 +5,7 @@ import Footer from '../../components/layout/Footer';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from '../../contexts/ToastContext';
 import { api } from '../../services/api';
-import { ProjectDetail, FirmwareConfig, AVAILABLE_TOPICS } from '../../config/projectsData';
+import { ProjectDetail, FirmwareConfig, ProjectAttachment, AVAILABLE_TOPICS } from '../../config/projectsData';
 import {
   getProjectById,
   saveProjectAsync,
@@ -32,6 +32,7 @@ import {
   ShieldAlert,
   Check,
   CheckCircle2,
+  Paperclip,
 } from 'lucide-react';
 
 export default function ProjectEditorPage() {
@@ -92,6 +93,9 @@ export default function ProjectEditorPage() {
     },
   ]);
 
+  // File Attachments List
+  const [attachments, setAttachments] = useState<ProjectAttachment[]>([]);
+
   const [publishDate, setPublishDate] = useState('');
   const [flashCount, setFlashCount] = useState(0);
   const [formError, setFormError] = useState('');
@@ -146,6 +150,11 @@ export default function ProjectEditorPage() {
         setFlashCount(existing.flashCount || 0);
         if (existing.firmwares && existing.firmwares.length > 0) {
           setFirmwares(existing.firmwares);
+        }
+        if (existing.attachments && existing.attachments.length > 0) {
+          setAttachments(existing.attachments);
+        } else {
+          setAttachments([]);
         }
       } else {
         setFormError('Permission denied: Only the original author has permission to edit this project or tutorial.');
@@ -247,6 +256,60 @@ export default function ProjectEditorPage() {
     setFirmwares(updated);
   };
 
+  // Add / Remove Attachment row
+  const handleAddAttachment = () => {
+    setAttachments([
+      ...attachments,
+      {
+        name: '',
+        fileUrl: '',
+        fileSize: '',
+        fileType: '',
+      },
+    ]);
+  };
+
+  const handleRemoveAttachment = (idx: number) => {
+    setAttachments(attachments.filter((_, i) => i !== idx));
+  };
+
+  const handleAttachmentChange = (idx: number, field: keyof ProjectAttachment, value: string) => {
+    const updated = [...attachments];
+    let sanitizedVal = value;
+
+    if (field === 'fileUrl') {
+      sanitizedVal = convertGithubBlobToRaw(value.trim());
+      // Auto-infer name and fileType if currently empty
+      if (!updated[idx].name || !updated[idx].name.trim()) {
+        try {
+          const urlObj = new URL(sanitizedVal.startsWith('http') ? sanitizedVal : `https://${sanitizedVal}`);
+          const segment = urlObj.pathname.split('/').filter(Boolean).pop();
+          if (segment) {
+            updated[idx].name = decodeURIComponent(segment);
+            const dot = segment.lastIndexOf('.');
+            if (dot !== -1) {
+              updated[idx].fileType = segment.substring(dot + 1).toUpperCase();
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
+    } else if (field === 'name') {
+      // Auto infer fileType if name contains extension and fileType is empty
+      const dot = value.lastIndexOf('.');
+      if (dot !== -1 && !updated[idx].fileType) {
+        updated[idx].fileType = value.substring(dot + 1).toUpperCase();
+      }
+    }
+
+    updated[idx] = {
+      ...updated[idx],
+      [field]: sanitizedVal,
+    };
+    setAttachments(updated);
+  };
+
   // Toggle topic selection
   const toggleTopic = (topic: string) => {
     setSelectedTopics((prev) =>
@@ -340,6 +403,20 @@ export default function ProjectEditorPage() {
       }
     }
 
+    // Attachments validation
+    for (let i = 0; i < attachments.length; i++) {
+      const att = attachments[i];
+      if (att.fileUrl && att.fileUrl.trim()) {
+        const v = validateUrl(att.fileUrl, `Attachment #${i + 1} URL`);
+        if (!v.isValid) newErrors[`att_${i}_url`] = v.error || 'Invalid Attachment URL';
+      } else if (att.name && att.name.trim()) {
+        newErrors[`att_${i}_url`] = `File Download URL is required for Attachment #${i + 1}.`;
+      }
+      if (att.name && containsInappropriateWords(att.name)) {
+        newErrors[`att_${i}_name`] = `Inappropriate language in Attachment #${i + 1} name.`;
+      }
+    }
+
     // Check slug collision if creating new
     if (!isEditing && cleanSlug) {
       const existing = getProjectById(cleanSlug);
@@ -395,6 +472,17 @@ export default function ProjectEditorPage() {
           releaseDate: f.releaseDate && f.releaseDate.trim() ? f.releaseDate : currentDate,
         }));
 
+      // Sanitize attachments
+      const stampedAttachments = attachments
+        .filter((a) => a.fileUrl && a.fileUrl.trim())
+        .map((a) => ({
+          ...a,
+          fileUrl: convertGithubBlobToRaw(a.fileUrl.trim()),
+          name: a.name.trim() || a.fileUrl.split('/').pop() || 'Attachment',
+          fileSize: a.fileSize?.trim() || undefined,
+          fileType: a.fileType?.trim() || undefined,
+        }));
+
       const finalAuthorId = currentAuthorId || (isEditing && existingProject ? existingProject.authorId : '');
       const finalAuthor =
         isProjectAuthor(existingProject, user, profile) || !existingProject
@@ -435,6 +523,7 @@ export default function ProjectEditorPage() {
         license: license.trim() || 'MIT',
         tags: combinedTags.length > 0 ? combinedTags : ['UNIHIKER K10'],
         firmwares: stampedFirmwares,
+        attachments: stampedAttachments,
       };
 
       await saveProjectAsync(projectToSave);
@@ -1309,7 +1398,233 @@ export default function ProjectEditorPage() {
               </div>
             </div>
 
-            {/* ── Section 4: External Project URL & GitHub ───────────────── */}
+            {/* ── Section 4: Files & Attachments ───────────────────────────── */}
+            <div
+              style={{
+                backgroundColor: 'var(--color-surface)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-xl)',
+                padding: 'var(--space-8)',
+                boxShadow: 'var(--shadow-sm)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: 'var(--radius-full)',
+                      backgroundColor: 'var(--color-accent)',
+                      color: '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                    }}
+                  >
+                    4
+                  </span>
+                  <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, margin: 0, color: 'var(--color-ink-primary)' }}>
+                    Files & Attachments
+                  </h2>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleAddAttachment}
+                  className="btn btn--secondary btn--sm"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: 'var(--text-xs)' }}
+                >
+                  <Plus size={13} /> Add File
+                </button>
+              </div>
+
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-ink-secondary)', margin: '0 0 var(--space-4) 0' }}>
+                Attach downloadable resources for makers — such as 3D printing models (.stl, .step), circuit schematics (.pdf), code archives (.zip), or datasets.
+              </p>
+
+              {attachments.length === 0 ? (
+                <div
+                  style={{
+                    padding: 'var(--space-6)',
+                    backgroundColor: 'var(--color-paper)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px dashed var(--color-border)',
+                    textAlign: 'center',
+                  }}
+                >
+                  <Paperclip size={24} style={{ color: 'var(--color-ink-tertiary)', margin: '0 auto 8px auto', display: 'block' }} />
+                  <p style={{ margin: '0 0 8px 0', fontSize: 'var(--text-xs)', color: 'var(--color-ink-secondary)' }}>
+                    No files or attachments added yet.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleAddAttachment}
+                    className="btn btn--secondary btn--sm"
+                    style={{ fontSize: 'var(--text-xs)' }}
+                  >
+                    <Plus size={13} /> Add Attachment
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+                  {attachments.map((att, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        padding: 'var(--space-4)',
+                        backgroundColor: 'var(--color-paper)',
+                        borderRadius: 'var(--radius-lg)',
+                        border: '1px solid var(--color-border)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
+                        <span style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--color-ink-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Paperclip size={13} /> Attachment #{idx + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveAttachment(idx)}
+                          className="btn btn--ghost btn--sm"
+                          style={{ color: '#dc2626', padding: '2px 6px' }}
+                          title="Remove attachment"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-3)' }}>
+                        {/* File Name / Label */}
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--color-ink-tertiary)', marginBottom: '4px' }}>
+                            File Label / Name
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. UNIHIKER_K10_Stand.stl or Schematic Diagram PDF"
+                            value={att.name}
+                            onChange={(e) => {
+                              handleAttachmentChange(idx, 'name', e.target.value);
+                              if (fieldErrors[`att_${idx}_name`]) {
+                                setFieldErrors((prev) => {
+                                  const next = { ...prev };
+                                  delete next[`att_${idx}_name`];
+                                  return next;
+                                });
+                              }
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '8px 10px',
+                              backgroundColor: 'var(--color-surface)',
+                              border: fieldErrors[`att_${idx}_name`] ? '1px solid #ef4444' : '1px solid var(--color-border)',
+                              borderRadius: 'var(--radius-md)',
+                              fontSize: 'var(--text-xs)',
+                              color: 'var(--color-ink-primary)',
+                              outline: 'none',
+                            }}
+                          />
+                          {fieldErrors[`att_${idx}_name`] && (
+                            <span style={{ display: 'block', color: '#ef4444', fontSize: '10px', marginTop: '3px' }}>
+                              {fieldErrors[`att_${idx}_name`]}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* File Download URL */}
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--color-ink-tertiary)', marginBottom: '4px' }}>
+                            File URL <span style={{ color: '#ef4444' }}>*</span>
+                          </label>
+                          <input
+                            id={`input-att_${idx}_url`}
+                            type="url"
+                            placeholder="https://... (GitHub, Google Drive, direct link)"
+                            value={att.fileUrl}
+                            onChange={(e) => {
+                              handleAttachmentChange(idx, 'fileUrl', e.target.value);
+                              if (fieldErrors[`att_${idx}_url`]) {
+                                setFieldErrors((prev) => {
+                                  const next = { ...prev };
+                                  delete next[`att_${idx}_url`];
+                                  return next;
+                                });
+                              }
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '8px 10px',
+                              backgroundColor: 'var(--color-surface)',
+                              border: fieldErrors[`att_${idx}_url`] ? '1px solid #ef4444' : '1px solid var(--color-border)',
+                              borderRadius: 'var(--radius-md)',
+                              fontSize: 'var(--text-xs)',
+                              fontFamily: 'monospace',
+                              color: 'var(--color-ink-primary)',
+                              outline: 'none',
+                            }}
+                          />
+                          {fieldErrors[`att_${idx}_url`] && (
+                            <span style={{ display: 'block', color: '#ef4444', fontSize: '10px', marginTop: '3px' }}>
+                              {fieldErrors[`att_${idx}_url`]}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Optional File Size */}
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--color-ink-tertiary)', marginBottom: '4px' }}>
+                            File Size (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. 2.4 MB or 550 KB"
+                            value={att.fileSize || ''}
+                            onChange={(e) => handleAttachmentChange(idx, 'fileSize', e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '8px 10px',
+                              backgroundColor: 'var(--color-surface)',
+                              border: '1px solid var(--color-border)',
+                              borderRadius: 'var(--radius-md)',
+                              fontSize: 'var(--text-xs)',
+                              color: 'var(--color-ink-primary)',
+                              outline: 'none',
+                            }}
+                          />
+                        </div>
+
+                        {/* Optional File Format / Type */}
+                        <div>
+                          <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--color-ink-tertiary)', marginBottom: '4px' }}>
+                            Format / Type (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. STL, STEP, PDF, ZIP"
+                            value={att.fileType || ''}
+                            onChange={(e) => handleAttachmentChange(idx, 'fileType', e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '8px 10px',
+                              backgroundColor: 'var(--color-surface)',
+                              border: '1px solid var(--color-border)',
+                              borderRadius: 'var(--radius-md)',
+                              fontSize: 'var(--text-xs)',
+                              color: 'var(--color-ink-primary)',
+                              outline: 'none',
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ── Section 5: External Project URL & GitHub ───────────────── */}
             <div
               style={{
                 backgroundColor: 'var(--color-surface)',
@@ -1334,7 +1649,7 @@ export default function ProjectEditorPage() {
                     fontWeight: 700,
                   }}
                 >
-                  4
+                  5
                 </span>
                 <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, margin: 0, color: 'var(--color-ink-primary)' }}>
                   External Project URL & GitHub
@@ -1388,7 +1703,7 @@ export default function ProjectEditorPage() {
               </div>
             </div>
 
-            {/* ── Section 5: Category, Difficulty & Tags ─────────────────── */}
+            {/* ── Section 6: Category, Difficulty & Tags ─────────────────── */}
             <div
               style={{
                 backgroundColor: 'var(--color-surface)',
@@ -1413,7 +1728,7 @@ export default function ProjectEditorPage() {
                     fontWeight: 700,
                   }}
                 >
-                  5
+                  6
                 </span>
                 <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, margin: 0, color: 'var(--color-ink-primary)' }}>
                   Category & Classification

@@ -4,6 +4,7 @@ import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import WebFlasherPanel from '../../components/projects/WebFlasherPanel';
 import ProjectDocumentation from '../../components/projects/ProjectDocumentation';
+import ProjectAttachments from '../../components/projects/ProjectAttachments';
 import { ProjectDetail } from '../../config/projectsData';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -22,6 +23,7 @@ import {
   Heart,
   Bookmark,
   MessageSquare,
+  Download,
 } from 'lucide-react';
 import ProjectCommentsSection from '../../components/community/ProjectCommentsSection';
 import {
@@ -630,6 +632,18 @@ export default function ProjectDetailPage() {
                           </a>
                         )}
 
+                        {project.attachments && project.attachments.length > 0 && (
+                          <a
+                            href="#project-attachments"
+                            className="btn btn--secondary"
+                            style={heroBtnStyle}
+                            title="Jump to downloadable files & resources"
+                          >
+                            <Download size={15} />
+                            <span>Files ({project.attachments.length})</span>
+                          </a>
+                        )}
+
                         {canEdit && (
                           <Link
                             to={`/project/${project.id}/edit`}
@@ -849,9 +863,10 @@ export default function ProjectDetailPage() {
               <ProjectCommentsSection project={project} />
             </div>
 
-            {/* 1 COLUMN: Firmware Flashing Station */}
+            {/* 1 COLUMN: Firmware Flashing Station & Downloads */}
             <div id="flasher-station" style={{ minWidth: 0 }}>
               <WebFlasherPanel project={project} onFlashSuccess={handleFlashSuccess} />
+              <ProjectAttachments attachments={project.attachments} projectTitle={project.title} />
             </div>
           </div>
         </div>

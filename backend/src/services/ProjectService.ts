@@ -45,6 +45,17 @@ export function parseProjectRow(row: any) {
     parsedFirmwares = [];
   }
 
+  let parsedAttachments: any[] = [];
+  try {
+    if (typeof row.attachments === 'string' && row.attachments.trim()) {
+      parsedAttachments = JSON.parse(row.attachments);
+    } else if (Array.isArray(row.attachments)) {
+      parsedAttachments = row.attachments;
+    }
+  } catch {
+    parsedAttachments = [];
+  }
+
   return {
     ...row,
     id: row.id,
@@ -80,6 +91,7 @@ export function parseProjectRow(row: any) {
     license: row.license || 'MIT',
     tags: parsedTags,
     firmwares: parsedFirmwares,
+    attachments: parsedAttachments,
   };
 }
 
@@ -254,6 +266,29 @@ export class ProjectService {
       ? (Array.isArray(payload.firmwares) ? JSON.stringify(payload.firmwares) : typeof payload.firmwares === 'string' ? payload.firmwares : '[]')
       : (existing?.firmwares || '[]');
 
+    let rawAttachments = payload.attachments;
+    if (typeof rawAttachments === 'string') {
+      try { rawAttachments = JSON.parse(rawAttachments); } catch { rawAttachments = []; }
+    }
+    const sanitizedAttachments = Array.isArray(rawAttachments)
+      ? rawAttachments
+          .filter((att: any) => att && typeof att === 'object' && (att.fileUrl || att.url || att.name))
+          .map((att: any) => {
+            const rawUrl = String(att.fileUrl || att.url || '').trim();
+            const cleanUrl = rawUrl ? validateUrl(rawUrl, 'Attachment File').cleanUrl : '';
+            return {
+              name: censorBadWords(String(att.name || '').trim()),
+              fileUrl: cleanUrl,
+              fileSize: att.fileSize ? String(att.fileSize).trim() : undefined,
+              fileType: att.fileType ? String(att.fileType).trim() : undefined,
+            };
+          })
+      : undefined;
+
+    const serializedAttachments = sanitizedAttachments !== undefined
+      ? JSON.stringify(sanitizedAttachments)
+      : (payload.attachments !== undefined ? (typeof payload.attachments === 'string' ? payload.attachments : '[]') : (existing?.attachments || '[]'));
+
     const authorName = censorBadWords(payload.author || existing?.author || user?.name || 'Maker');
     const authorAvatar = payload.authorAvatar !== undefined ? payload.authorAvatar : (existing?.authorAvatar || user?.avatarUrl || '');
     const rawRole = payload.authorRole !== undefined ? payload.authorRole : (existing?.authorRole || user?.role || 'author');
@@ -311,6 +346,7 @@ export class ProjectService {
           license: payload.license || existing.license,
           tags: serializedTags,
           firmwares: serializedFirmwares,
+          attachments: serializedAttachments,
           updatedAt: now,
         })
         .where(eq(projects.id, existing.id));
@@ -354,6 +390,7 @@ export class ProjectService {
       license: payload.license || 'MIT',
       tags: serializedTags,
       firmwares: serializedFirmwares,
+      attachments: serializedAttachments,
       createdAt: now,
       updatedAt: now,
     });

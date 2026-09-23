@@ -73,6 +73,7 @@ export async function refreshProjectsFromBackend(retryCount = 0): Promise<Projec
         license: p.license || 'MIT',
         tags: Array.isArray(p.tags) ? p.tags : [],
         firmwares: Array.isArray(p.firmwares) ? p.firmwares : [],
+        attachments: Array.isArray(p.attachments) ? p.attachments : [],
       }));
 
       // Merge with any locally stored unapproved projects (drafts or pending_approval)
@@ -559,6 +560,7 @@ export function mergeBackendAuthorProjects(authorProjects: any[]): void {
       license: raw.license || 'MIT',
       tags: Array.isArray(raw.tags) ? raw.tags : [],
       firmwares: Array.isArray(raw.firmwares) ? raw.firmwares : [],
+      attachments: Array.isArray(raw.attachments) ? raw.attachments : [],
     };
 
     if (existingIdx >= 0) {
@@ -700,6 +702,14 @@ export async function saveProjectAsync(project: ProjectDetail): Promise<ProjectD
       name: censorBadWords(f.name || ''),
       versionNote: censorBadWords(f.versionNote || ''),
     })),
+    attachments: Array.isArray(project.attachments)
+      ? project.attachments.map((a) => ({
+          name: censorBadWords(a.name || ''),
+          fileUrl: a.fileUrl || '',
+          fileSize: a.fileSize || undefined,
+          fileType: a.fileType || undefined,
+        }))
+      : [],
   };
 
   // Optimistically update memory and storage
@@ -777,6 +787,14 @@ export function saveProject(project: ProjectDetail): ProjectDetail {
       name: censorBadWords(f.name || ''),
       versionNote: censorBadWords(f.versionNote || ''),
     })),
+    attachments: Array.isArray(project.attachments)
+      ? project.attachments.map((a) => ({
+          name: censorBadWords(a.name || ''),
+          fileUrl: a.fileUrl || '',
+          fileSize: a.fileSize || undefined,
+          fileType: a.fileType || undefined,
+        }))
+      : [],
   };
 
   if (existingIdx >= 0) {

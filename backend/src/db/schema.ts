@@ -33,6 +33,7 @@ export const projects = sqliteTable('projects', {
   license: text('license').default('MIT'),
   tags: text('tags'),
   firmwares: text('firmwares'),
+  attachments: text('attachments'),
   createdAt: integer('created_at').default(sql`(unixepoch())`),
   updatedAt: integer('updated_at').default(sql`(unixepoch())`),
 });
