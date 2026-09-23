@@ -205,6 +205,195 @@ export default function ProjectDetailPage() {
     }
   };
 
+  const renderActionBar = (containerStyle?: React.CSSProperties) => {
+    if (!project) return null;
+
+    const actionBtnStyle: React.CSSProperties = {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '0.45rem',
+      height: '36px',
+      padding: '0 13px',
+      fontSize: '13px',
+      fontWeight: 500,
+      borderRadius: '8px',
+      boxSizing: 'border-box',
+      textDecoration: 'none',
+      cursor: 'pointer',
+    };
+
+    const actionIconBtnStyle: React.CSSProperties = {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '36px',
+      height: '36px',
+      padding: 0,
+      borderRadius: '8px',
+      boxSizing: 'border-box',
+      textDecoration: 'none',
+      cursor: 'pointer',
+      transition: 'all 0.15s ease',
+    };
+
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 'var(--space-3)',
+          flexWrap: 'wrap',
+          ...containerStyle,
+        }}
+      >
+        {/* Left: Project Links & Management */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {project.githubLink && (
+            <a
+              href={project.githubLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn--secondary"
+              style={actionBtnStyle}
+            >
+              <Github size={15} />
+              <span>GitHub Source</span>
+            </a>
+          )}
+
+          {project.docLink && (
+            <a
+              href={project.docLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn--secondary"
+              style={actionBtnStyle}
+            >
+              <ExternalLink size={15} />
+              <span>Project Guide</span>
+            </a>
+          )}
+
+          {project.attachments && project.attachments.length > 0 && (
+            <a
+              href="#project-attachments"
+              className="btn btn--secondary"
+              style={actionBtnStyle}
+              title="Jump to downloadable files & resources"
+            >
+              <Download size={15} />
+              <span>Files ({project.attachments.length})</span>
+            </a>
+          )}
+
+          {canEdit && (
+            <Link
+              to={`/project/${project.id}/edit`}
+              className="btn btn--secondary"
+              title="Edit Project / Tutorial"
+              style={actionBtnStyle}
+            >
+              <Edit3 size={14} />
+              <span>Edit {project.type || 'Project'}</span>
+            </Link>
+          )}
+
+          {role === 'admin' && (
+            <button
+              type="button"
+              onClick={() => {
+                toggleFeaturedProject(project.id);
+                setCurrentProject(getStoredProjectById(project.id));
+              }}
+              className="btn btn--secondary"
+              style={{
+                ...actionBtnStyle,
+                color: (project.featured || project.isFeatured) ? '#d97706' : 'var(--color-ink-secondary)',
+                backgroundColor: (project.featured || project.isFeatured) ? 'rgba(245, 158, 11, 0.12)' : undefined,
+                borderColor: (project.featured || project.isFeatured) ? 'rgba(245, 158, 11, 0.4)' : undefined,
+              }}
+              title={(project.featured || project.isFeatured) ? 'Unfeature this project' : 'Feature this project on Home'}
+            >
+              <Star size={14} fill={(project.featured || project.isFeatured) ? '#f59e0b' : 'none'} color={(project.featured || project.isFeatured) ? '#f59e0b' : 'currentColor'} />
+              <span>{(project.featured || project.isFeatured) ? 'Featured' : 'Feature'}</span>
+            </button>
+          )}
+        </div>
+
+        {/* Right: Community & Social Icon Buttons (Like, Comment, Bookmark, Share) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {/* Like Icon Button */}
+          <button
+            type="button"
+            onClick={handleToggleLike}
+            className="btn btn--secondary"
+            title={isLiked ? `Unlike (${likeCount})` : `Like (${likeCount})`}
+            aria-label={isLiked ? 'Unlike this project' : 'Like this project'}
+            style={{
+              ...actionIconBtnStyle,
+              ...(likeCount > 0 ? { width: 'auto', padding: '0 9px', gap: '5px' } : {}),
+              color: isLiked ? '#ef4444' : 'var(--color-ink-primary)',
+              backgroundColor: isLiked ? 'rgba(239, 68, 68, 0.08)' : undefined,
+              borderColor: isLiked ? 'rgba(239, 68, 68, 0.35)' : undefined,
+            }}
+          >
+            <Heart size={16} fill={isLiked ? '#ef4444' : 'none'} color={isLiked ? '#ef4444' : 'currentColor'} />
+            {likeCount > 0 && <span style={{ fontSize: '12px', fontWeight: 600 }}>{likeCount}</span>}
+          </button>
+
+          {/* Comment Icon Button */}
+          <a
+            href="#discussion"
+            className="btn btn--secondary"
+            title={`Discussion (${commentCount} ${commentCount === 1 ? 'comment' : 'comments'})`}
+            aria-label="Jump to community discussion"
+            style={{
+              ...actionIconBtnStyle,
+              ...(commentCount > 0 ? { width: 'auto', padding: '0 9px', gap: '5px' } : {}),
+            }}
+          >
+            <MessageSquare size={16} />
+            {commentCount > 0 && <span style={{ fontSize: '12px', fontWeight: 600 }}>{commentCount}</span>}
+          </a>
+
+          {/* Bookmark Icon Button */}
+          <button
+            type="button"
+            onClick={handleToggleBookmark}
+            className="btn btn--secondary"
+            title={isBookmarked ? 'Remove from bookmarks' : 'Bookmark this project'}
+            aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark project'}
+            style={{
+              ...actionIconBtnStyle,
+              color: isBookmarked ? 'var(--color-accent)' : 'var(--color-ink-primary)',
+              backgroundColor: isBookmarked ? 'var(--color-accent-muted)' : undefined,
+              borderColor: isBookmarked ? 'var(--color-accent-light)' : undefined,
+            }}
+          >
+            <Bookmark size={16} fill={isBookmarked ? 'var(--color-accent)' : 'none'} color={isBookmarked ? 'var(--color-accent)' : 'currentColor'} />
+          </button>
+
+          {/* Share Icon Button */}
+          <button
+            type="button"
+            onClick={handleShare}
+            className="btn btn--secondary"
+            title={copiedLink ? 'Link Copied!' : 'Share this project'}
+            aria-label="Share this project"
+            style={{
+              ...actionIconBtnStyle,
+              color: copiedLink ? 'var(--color-accent)' : undefined,
+              borderColor: copiedLink ? 'var(--color-accent)' : undefined,
+            }}
+          >
+            <Share2 size={16} />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--color-paper)' }}>
       <Header />
@@ -562,194 +751,11 @@ export default function ProjectDetailPage() {
                 </div>
 
                 {/* Bottom Actions Row: Arranged by Relevance and Aligned */}
-                {(() => {
-                  const heroBtnStyle: React.CSSProperties = {
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.45rem',
-                    height: '36px',
-                    padding: '0 13px',
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    borderRadius: '8px',
-                    boxSizing: 'border-box',
-                    textDecoration: 'none',
-                    cursor: 'pointer',
-                  };
-
-                  const heroIconBtnStyle: React.CSSProperties = {
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '36px',
-                    height: '36px',
-                    padding: 0,
-                    borderRadius: '8px',
-                    boxSizing: 'border-box',
-                    textDecoration: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  };
-
-                  return (
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 'var(--space-3)',
-                        flexWrap: 'wrap',
-                        marginTop: 'var(--space-6)',
-                        paddingTop: 'var(--space-4)',
-                        borderTop: '1px solid var(--color-border)',
-                      }}
-                    >
-                      {/* Left: Project Links & Management */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                        {project.githubLink && (
-                          <a
-                            href={project.githubLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn btn--secondary"
-                            style={heroBtnStyle}
-                          >
-                            <Github size={15} />
-                            <span>GitHub Source</span>
-                          </a>
-                        )}
-
-                        {project.docLink && (
-                          <a
-                            href={project.docLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn btn--secondary"
-                            style={heroBtnStyle}
-                          >
-                            <ExternalLink size={15} />
-                            <span>Project Guide</span>
-                          </a>
-                        )}
-
-                        {project.attachments && project.attachments.length > 0 && (
-                          <a
-                            href="#project-attachments"
-                            className="btn btn--secondary"
-                            style={heroBtnStyle}
-                            title="Jump to downloadable files & resources"
-                          >
-                            <Download size={15} />
-                            <span>Files ({project.attachments.length})</span>
-                          </a>
-                        )}
-
-                        {canEdit && (
-                          <Link
-                            to={`/project/${project.id}/edit`}
-                            className="btn btn--secondary"
-                            title="Edit Project / Tutorial"
-                            style={heroBtnStyle}
-                          >
-                            <Edit3 size={14} />
-                            <span>Edit {project.type || 'Project'}</span>
-                          </Link>
-                        )}
-
-                        {role === 'admin' && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              toggleFeaturedProject(project.id);
-                              setCurrentProject(getStoredProjectById(project.id));
-                            }}
-                            className="btn btn--secondary"
-                            style={{
-                              ...heroBtnStyle,
-                              color: (project.featured || project.isFeatured) ? '#d97706' : 'var(--color-ink-secondary)',
-                              backgroundColor: (project.featured || project.isFeatured) ? 'rgba(245, 158, 11, 0.12)' : undefined,
-                              borderColor: (project.featured || project.isFeatured) ? 'rgba(245, 158, 11, 0.4)' : undefined,
-                            }}
-                            title={(project.featured || project.isFeatured) ? 'Unfeature this project' : 'Feature this project on Home'}
-                          >
-                            <Star size={14} fill={(project.featured || project.isFeatured) ? '#f59e0b' : 'none'} color={(project.featured || project.isFeatured) ? '#f59e0b' : 'currentColor'} />
-                            <span>{(project.featured || project.isFeatured) ? 'Featured' : 'Feature'}</span>
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Right: Community & Social Icon Buttons (Like, Comment, Bookmark, Share) */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                        {/* Like Icon Button */}
-                        <button
-                          type="button"
-                          onClick={handleToggleLike}
-                          className="btn btn--secondary"
-                          title={isLiked ? `Unlike (${likeCount})` : `Like (${likeCount})`}
-                          aria-label={isLiked ? 'Unlike this project' : 'Like this project'}
-                          style={{
-                            ...heroIconBtnStyle,
-                            ...(likeCount > 0 ? { width: 'auto', padding: '0 9px', gap: '5px' } : {}),
-                            color: isLiked ? '#ef4444' : 'var(--color-ink-primary)',
-                            backgroundColor: isLiked ? 'rgba(239, 68, 68, 0.08)' : undefined,
-                            borderColor: isLiked ? 'rgba(239, 68, 68, 0.35)' : undefined,
-                          }}
-                        >
-                          <Heart size={16} fill={isLiked ? '#ef4444' : 'none'} color={isLiked ? '#ef4444' : 'currentColor'} />
-                          {likeCount > 0 && <span style={{ fontSize: '12px', fontWeight: 600 }}>{likeCount}</span>}
-                        </button>
-
-                        {/* Comment Icon Button */}
-                        <a
-                          href="#discussion"
-                          className="btn btn--secondary"
-                          title={`Discussion (${commentCount} ${commentCount === 1 ? 'comment' : 'comments'})`}
-                          aria-label="Jump to community discussion"
-                          style={{
-                            ...heroIconBtnStyle,
-                            ...(commentCount > 0 ? { width: 'auto', padding: '0 9px', gap: '5px' } : {}),
-                          }}
-                        >
-                          <MessageSquare size={16} />
-                          {commentCount > 0 && <span style={{ fontSize: '12px', fontWeight: 600 }}>{commentCount}</span>}
-                        </a>
-
-                        {/* Bookmark Icon Button */}
-                        <button
-                          type="button"
-                          onClick={handleToggleBookmark}
-                          className="btn btn--secondary"
-                          title={isBookmarked ? 'Remove from bookmarks' : 'Bookmark this project'}
-                          aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark project'}
-                          style={{
-                            ...heroIconBtnStyle,
-                            color: isBookmarked ? 'var(--color-accent)' : 'var(--color-ink-primary)',
-                            backgroundColor: isBookmarked ? 'var(--color-accent-muted)' : undefined,
-                            borderColor: isBookmarked ? 'var(--color-accent-light)' : undefined,
-                          }}
-                        >
-                          <Bookmark size={16} fill={isBookmarked ? 'var(--color-accent)' : 'none'} color={isBookmarked ? 'var(--color-accent)' : 'currentColor'} />
-                        </button>
-
-                        {/* Share Icon Button */}
-                        <button
-                          type="button"
-                          onClick={handleShare}
-                          className="btn btn--secondary"
-                          title={copiedLink ? 'Link Copied!' : 'Share this project'}
-                          aria-label="Share this project"
-                          style={{
-                            ...heroIconBtnStyle,
-                            color: copiedLink ? 'var(--color-accent)' : undefined,
-                            borderColor: copiedLink ? 'var(--color-accent)' : undefined,
-                          }}
-                        >
-                          <Share2 size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })()}
+                {renderActionBar({
+                  marginTop: 'var(--space-6)',
+                  paddingTop: 'var(--space-4)',
+                  borderTop: '1px solid var(--color-border)',
+                })}
               </div>
 
               {/* Hero Right: Cover Image (4:3 Ratio, height 100% matching Left Extreme) */}
@@ -860,6 +866,21 @@ export default function ProjectDetailPage() {
               )}
 
               <ProjectDocumentation project={project} />
+
+              {/* Action Bar below .md documentation and above comments */}
+              <div
+                style={{
+                  marginTop: 'var(--space-6)',
+                  padding: '14px 18px',
+                  backgroundColor: 'var(--color-surface)',
+                  borderRadius: '16px',
+                  border: '1px solid var(--color-border)',
+                  boxShadow: 'var(--shadow-sm)',
+                }}
+              >
+                {renderActionBar()}
+              </div>
+
               <ProjectCommentsSection project={project} />
             </div>
 

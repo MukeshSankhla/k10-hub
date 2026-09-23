@@ -42,6 +42,13 @@ function getFileInfo(att: ProjectAttachment) {
     }
   }
 
+  if (!ext && att.name) {
+    const dot = att.name.lastIndexOf('.');
+    if (dot !== -1) {
+      ext = att.name.substring(dot + 1).trim().toLowerCase();
+    }
+  }
+
   const type = explicitType || ext.toUpperCase() || 'FILE';
 
   // Categories & Colors

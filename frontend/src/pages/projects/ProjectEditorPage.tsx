@@ -1495,7 +1495,7 @@ export default function ProjectEditorPage() {
                         </button>
                       </div>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-3)' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--space-3)' }}>
                         {/* File Name / Label */}
                         <div>
                           <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--color-ink-tertiary)', marginBottom: '4px' }}>
@@ -1570,52 +1570,6 @@ export default function ProjectEditorPage() {
                               {fieldErrors[`att_${idx}_url`]}
                             </span>
                           )}
-                        </div>
-
-                        {/* Optional File Size */}
-                        <div>
-                          <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--color-ink-tertiary)', marginBottom: '4px' }}>
-                            File Size (Optional)
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="e.g. 2.4 MB or 550 KB"
-                            value={att.fileSize || ''}
-                            onChange={(e) => handleAttachmentChange(idx, 'fileSize', e.target.value)}
-                            style={{
-                              width: '100%',
-                              padding: '8px 10px',
-                              backgroundColor: 'var(--color-surface)',
-                              border: '1px solid var(--color-border)',
-                              borderRadius: 'var(--radius-md)',
-                              fontSize: 'var(--text-xs)',
-                              color: 'var(--color-ink-primary)',
-                              outline: 'none',
-                            }}
-                          />
-                        </div>
-
-                        {/* Optional File Format / Type */}
-                        <div>
-                          <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--color-ink-tertiary)', marginBottom: '4px' }}>
-                            Format / Type (Optional)
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="e.g. STL, STEP, PDF, ZIP"
-                            value={att.fileType || ''}
-                            onChange={(e) => handleAttachmentChange(idx, 'fileType', e.target.value)}
-                            style={{
-                              width: '100%',
-                              padding: '8px 10px',
-                              backgroundColor: 'var(--color-surface)',
-                              border: '1px solid var(--color-border)',
-                              borderRadius: 'var(--radius-md)',
-                              fontSize: 'var(--text-xs)',
-                              color: 'var(--color-ink-primary)',
-                              outline: 'none',
-                            }}
-                          />
                         </div>
                       </div>
                     </div>
