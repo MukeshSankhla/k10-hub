@@ -798,7 +798,7 @@ export default function ProjectDetailPage() {
           {/* ══════════════════════════════════════════════════════════════════ */}
           <div className="project-detail-layout">
             {/* 2 COLUMNS: Video Embed & Markdown Document */}
-            <div style={{ minWidth: 0 }}>
+            <div className="project-detail-main" style={{ minWidth: 0 }}>
               {/* Video Integration Player Embed */}
               {parsedVideo && (
                 <div
@@ -879,7 +879,7 @@ export default function ProjectDetailPage() {
             </div>
 
             {/* 1 COLUMN: Firmware Flashing Station & Downloads */}
-            <div id="flasher-station" style={{ minWidth: 0 }}>
+            <div id="flasher-station" className="project-detail-sidebar" style={{ minWidth: 0 }}>
               <WebFlasherPanel project={project} onFlashSuccess={handleFlashSuccess} />
               <ProjectAttachments attachments={project.attachments} projectTitle={project.title} />
             </div>

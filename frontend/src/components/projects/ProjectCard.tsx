@@ -16,6 +16,12 @@ import {
   subscribeCommunity,
 } from '../../services/community/communityService';
 import UserBadge, { isKnownAdmin } from '../common/UserBadge';
+import {
+  optimizeCardImageUrl,
+  getCardImageSrcSet,
+  isImagePreloaded,
+  markImageLoaded,
+} from '../../utils/imageOptimizer';
 
 export function getLevelLabel(level: number | string | undefined): string {
   const num = Number(level);
@@ -60,6 +66,7 @@ export interface ProjectCardProps {
   statusBadge?: React.ReactNode;
   compactLevelBadge?: boolean;
   hideDescription?: boolean;
+  priority?: boolean;
 }
 
 /**
@@ -73,6 +80,7 @@ export default function ProjectCard({
   statusBadge,
   compactLevelBadge,
   hideDescription,
+  priority = false,
 }: ProjectCardProps) {
   const { user, profile } = useAuth();
   const authorInfo = resolveProjectAuthor(project, user, profile);
@@ -107,6 +115,14 @@ export default function ProjectCard({
     return unsub;
   }, [project.id, uid, altUid]);
 
+  // Optimized cover image URL, responsive srcset, and preload tracking
+  const rawCoverUrl = project.coverImage && project.coverImage.trim() ? project.coverImage : '/images/Place Holder.png';
+  const optimizedCoverUrl = optimizeCardImageUrl(rawCoverUrl, 640);
+  const srcSet = getCardImageSrcSet(rawCoverUrl);
+
+  const [imageLoaded, setImageLoaded] = useState(() => isImagePreloaded(optimizedCoverUrl));
+  const [hasImageError, setHasImageError] = useState(false);
+
   return (
     <div
       className="k10-project-card"
@@ -133,7 +149,7 @@ export default function ProjectCard({
           style={{
             width: '100%',
             aspectRatio: '4 / 3',
-            backgroundColor: '#0a0d14',
+            backgroundColor: 'var(--color-surface-sunken)',
             position: 'relative',
             overflow: 'hidden',
             display: 'flex',
@@ -141,17 +157,36 @@ export default function ProjectCard({
             justifyContent: 'center',
           }}
         >
+          {/* Skeleton Shimmer Loading Placeholder */}
+          {!imageLoaded && !hasImageError && (
+            <div className="k10-card-skeleton" aria-hidden="true" />
+          )}
+
           <img
-            src={project.coverImage && project.coverImage.trim() ? project.coverImage : '/images/Place Holder.png'}
+            src={hasImageError ? '/images/Place Holder.png' : optimizedCoverUrl}
+            srcSet={hasImageError ? undefined : srcSet}
+            sizes="(max-width: 600px) 100vw, (max-width: 1024px) 50vw, 380px"
             alt={project.title}
+            loading={priority ? 'eager' : 'lazy'}
+            decoding="async"
+            // @ts-ignore
+            fetchpriority={priority ? 'high' : 'auto'}
+            onLoad={() => {
+              markImageLoaded(optimizedCoverUrl);
+              setImageLoaded(true);
+            }}
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).src = '/images/Place Holder.png';
+              setHasImageError(true);
+              setImageLoaded(true);
             }}
             style={{
               width: '100%',
               height: '100%',
               objectFit: 'cover',
               display: 'block',
+              opacity: imageLoaded ? 1 : 0,
+              transition: 'opacity 0.22s ease-out',
             }}
           />
 

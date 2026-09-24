@@ -108,9 +108,9 @@ export default function FeaturedProjects() {
               role="list"
               aria-label="Featured UNIHIKER K10 Projects"
             >
-              {featuredProjects.map((project) => (
+              {featuredProjects.map((project, idx) => (
                 <div key={project.id} role="listitem" style={{ height: '100%' }}>
-                  <ProjectCard project={project} />
+                  <ProjectCard project={project} priority={idx < 4} />
                 </div>
               ))}
             </div>
@@ -192,9 +192,9 @@ export default function FeaturedProjects() {
               role="list"
               aria-label="Featured UNIHIKER K10 Tutorials"
             >
-              {featuredTutorials.map((tutorial) => (
+              {featuredTutorials.map((tutorial, idx) => (
                 <div key={tutorial.id} role="listitem" style={{ height: '100%' }}>
-                  <ProjectCard project={tutorial} />
+                  <ProjectCard project={tutorial} priority={idx < 2} />
                 </div>
               ))}
             </div>

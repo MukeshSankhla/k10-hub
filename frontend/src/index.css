@@ -500,20 +500,84 @@ button {
   gap: var(--space-3);
 }
 
+.nav__buy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 42px;
+  padding: 0 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  background-color: var(--color-accent);
+  color: #ffffff !important;
+  border: 1px solid var(--color-accent);
+  box-shadow: 0 2px 8px rgba(29, 78, 216, 0.2);
+  transition: all var(--transition-fast);
+}
+
+.nav__buy-btn:hover {
+  background-color: var(--color-accent-hover);
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.3);
+}
+
+.nav__buy-btn:active {
+  transform: scale(0.97);
+}
+
+@media (max-width: 480px) {
+  .nav__buy-btn {
+    height: 38px;
+    padding: 0 12px;
+    font-size: 12.5px;
+    gap: 4px;
+  }
+}
+
 .nav__mobile-toggle {
   display: none;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  min-height: 42px;
+  padding: 0 !important;
+  margin: 0;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  color: var(--color-ink-secondary);
-  transition: background-color var(--transition-fast);
+  background-color: var(--color-surface);
+  color: var(--color-ink-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-xs);
+  transition: all var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .nav__mobile-toggle:hover {
   background-color: var(--color-surface-sunken);
+  border-color: var(--color-border-strong);
   color: var(--color-ink-primary);
+}
+
+.nav__mobile-toggle:active {
+  transform: scale(0.96);
+}
+
+.nav__mobile-toggle svg {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  min-height: 22px;
+  stroke-width: 2.2px;
+  display: block;
+  flex-shrink: 0;
 }
 
 /* ─── Mobile Navigation Side Drawer & Overlay ───────────────────────────────── */
@@ -537,7 +601,7 @@ button {
   top: 0;
   right: 0;
   bottom: 0;
-  width: min(340px, 86vw);
+  width: min(380px, 86vw);
   background-color: var(--color-paper);
   z-index: 1201;
   box-shadow: -8px 0 36px rgba(0, 0, 0, 0.2);
@@ -597,7 +661,7 @@ button {
   font-weight: 600;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 1025px) {
   .nav__mobile-drawer,
   .nav__mobile-overlay,
   .nav__mobile-toggle {
@@ -1982,13 +2046,33 @@ button {
 /* ─── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
   :root {
-    --container-pad: var(--space-5);
+    --container-pad: var(--space-4);
   }
 
+  /* Navigation — Tablet & Phone use the sleek side drawer */
+  .nav__inner {
+    gap: var(--space-3);
+  }
+
+  .nav__wordmark-sub {
+    display: none;
+  }
+
+  .nav__links,
+  .nav__search-desktop,
+  .nav__auth-desktop {
+    display: none !important;
+  }
+
+  .nav__mobile-toggle {
+    display: flex !important;
+  }
+
+  /* Hero Section */
   .hero {
     min-height: auto;
     padding-top: calc(var(--nav-height) + var(--space-6));
-    padding-bottom: var(--space-10);
+    padding-bottom: var(--space-8);
   }
 
   .hero__scroll-indicator {
@@ -1997,18 +2081,25 @@ button {
 
   .hero__inner {
     grid-template-columns: 1fr;
-    gap: var(--space-10);
+    gap: var(--space-8);
     margin-block: 0;
   }
 
   .hero__content {
-    max-width: 600px;
+    max-width: 620px;
     margin-inline: auto;
     text-align: center;
+    align-items: center;
   }
 
   .hero__eyebrow {
     justify-content: center;
+  }
+
+  .hero__headline {
+    font-size: clamp(2rem, 5.5vw, 3.25rem);
+    white-space: normal;
+    line-height: 1.15;
   }
 
   .hero__subline {
@@ -2016,23 +2107,120 @@ button {
     border-top: 2px solid var(--color-border-strong);
     padding-left: 0;
     padding-top: var(--space-4);
+    font-size: var(--text-base);
+  }
+
+  .hero__description {
+    font-size: clamp(1rem, 2vw, 1.15rem);
+    margin-inline: auto;
+  }
+
+  .hero__feature-strip {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.35rem 0.5rem;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.75rem;
+    margin-inline: auto;
+  }
+
+  .hero__disciplines {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    margin-inline: auto;
+  }
+
+  .hero__discipline-tags {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
   }
 
   .hero__actions {
     justify-content: center;
+    width: 100%;
+    gap: var(--space-3);
   }
 
   .hero__spec-row {
     justify-content: center;
   }
 
-  .hero__description {
+  .hero__model-container {
+    height: clamp(340px, 45vh, 460px) !important;
+    width: 100%;
+    max-width: 520px;
     margin-inline: auto;
   }
 
-  .hero__model-container {
-    max-width: 504px;
-    margin-inline: auto;
+  /* Project Detail Hero & Body (Stacked Single-Column on Tablet & Phone) */
+  .project-hero-grid {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-6) !important;
+  }
+
+  .project-detail-layout {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-6) !important;
+  }
+
+  /* On phone/tab screen: 1-Click Flash Station appears before .md render below Hero */
+  .project-detail-sidebar {
+    order: 1 !important;
+  }
+
+  .project-detail-main {
+    order: 2 !important;
+  }
+
+  .project-detail-sidebar > div {
+    position: static !important;
+  }
+
+  /* Gallery Filter Bar */
+  .gallery-filter-bar {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: var(--space-3);
+  }
+
+  .gallery-filter-search {
+    width: 100%;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  .gallery-filter-search > div:first-child {
+    flex: 1;
+    width: auto !important;
+  }
+
+  /* Projects & Tutorials Grids — Tab screen shows 3 columns */
+  .featured-showcase-grid,
+  .projects-gallery-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: var(--space-4) !important;
+  }
+
+  /* The tab should show only 3 projects and 3 tutorials on homepage */
+  .featured-showcase-grid > *:nth-child(n+4) {
+    display: none !important;
+  }
+
+  .profile-projects-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: var(--space-4) !important;
+  }
+
+  .capability-strip__inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-5);
+  }
+
+  .capability-strip__divider {
+    display: none;
   }
 
   .progression__header {
@@ -2057,7 +2245,12 @@ button {
   .flash-teaser__inner,
   .community__inner {
     grid-template-columns: 1fr;
-    gap: var(--space-10);
+    gap: var(--space-8);
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .footer__inner {
@@ -2068,126 +2261,6 @@ button {
   .footer__brand {
     grid-column: 1 / -1;
   }
-}
-
-@media (max-width: 960px) {
-  .nav__search-desktop {
-    display: none !important;
-  }
-
-  .project-hero-grid {
-    grid-template-columns: 1fr !important;
-    gap: var(--space-6) !important;
-  }
-
-  .project-detail-layout {
-    grid-template-columns: 1fr !important;
-    gap: var(--space-6) !important;
-  }
-}
-
-@media (max-width: 768px) {
-  :root {
-    --container-pad: var(--space-4);
-  }
-
-  .nav__inner {
-    gap: var(--space-2);
-  }
-
-  .nav__wordmark-sub {
-    display: none;
-  }
-
-  .nav__links,
-  .nav__search-desktop,
-  .nav__auth-desktop {
-    display: none !important;
-  }
-
-  .nav__mobile-toggle {
-    display: flex !important;
-  }
-
-  .hero__headline {
-    font-size: clamp(2.2rem, 7vw, 3rem);
-    line-height: 1.15;
-  }
-
-  .hero__subline {
-    font-size: var(--text-base);
-  }
-
-  .hero__feature-strip {
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.35rem 0.5rem;
-    padding: 0.6rem 0.8rem;
-    font-size: 0.72rem;
-  }
-
-  .hero__disciplines {
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-2);
-  }
-
-  .hero__discipline-tags {
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .hero__model-container {
-    height: clamp(380px, 50vh, 480px) !important;
-    width: 100%;
-  }
-
-  .gallery-filter-bar {
-    flex-direction: column;
-    align-items: stretch !important;
-    gap: var(--space-3);
-  }
-
-  .gallery-filter-search {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .gallery-filter-search > div:first-child {
-    flex: 1;
-    width: auto !important;
-  }
-
-  .capability-strip__inner {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-5);
-  }
-
-  .capability-strip__divider {
-    display: none;
-  }
-
-  .projects-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .section-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .footer__inner {
-    grid-template-columns: 1fr;
-    gap: var(--space-8);
-  }
-
-  .footer__bottom {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-3);
-  }
 
   .community__stats {
     gap: var(--space-6);
@@ -2195,12 +2268,17 @@ button {
 
   .admin-tab-nav {
     padding-bottom: 4px;
+    overflow-x: auto;
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
+  :root {
+    --container-pad: var(--space-3);
+  }
+
   .hero__headline {
-    font-size: var(--text-3xl);
+    font-size: clamp(1.75rem, 7.5vw, 2.35rem);
   }
 
   .hero__spec-row {
@@ -2218,8 +2296,28 @@ button {
     justify-content: center;
   }
 
+  .featured-showcase-grid,
+  .projects-gallery-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .profile-projects-grid {
+    grid-template-columns: 1fr !important;
+  }
+
   .capability-strip__inner {
     grid-template-columns: 1fr;
+  }
+
+  .footer__inner {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  .footer__bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
   }
 }
 
@@ -2365,7 +2463,7 @@ button {
   align-items: start;
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1024px) {
   .project-hero-grid {
     grid-template-columns: 1fr;
     align-items: start;
@@ -2375,6 +2473,18 @@ button {
   .project-detail-layout {
     grid-template-columns: 1fr;
     gap: var(--space-6);
+  }
+
+  .project-detail-sidebar {
+    order: 1;
+  }
+
+  .project-detail-main {
+    order: 2;
+  }
+
+  .project-detail-sidebar > div {
+    position: static !important;
   }
 }
 
@@ -2653,28 +2763,45 @@ button {
   background-color: var(--color-accent) !important;
 }
 
-/* 4-column Homepage Featured Showcase Grid */
-.featured-showcase-grid {
+/* 4-column Homepage Featured Showcase Grid & Projects Gallery Grid */
+.featured-showcase-grid,
+.projects-gallery-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-6);
 }
 
 @media (max-width: 1280px) {
-  .featured-showcase-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .featured-showcase-grid,
+  .projects-gallery-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-5);
   }
 }
 
-@media (max-width: 900px) {
-  .featured-showcase-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+/* Tablet screen (e.g. iPad 768px, 800px, 820px, 834px, 1024px) -> Exactly 3 columns */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .featured-showcase-grid,
+  .projects-gallery-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: var(--space-4) !important;
+  }
+
+  /* The tab should show only 3 projects and 3 tutorials on homepage */
+  .featured-showcase-grid > *:nth-child(n+4) {
+    display: none !important;
   }
 }
 
-@media (max-width: 580px) {
-  .featured-showcase-grid {
-    grid-template-columns: 1fr;
+@media (max-width: 640px) {
+  .featured-showcase-grid,
+  .projects-gallery-grid {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-4);
+  }
+
+  .featured-showcase-grid > *:nth-child(n+4) {
+    display: block !important;
   }
 }
 
@@ -2685,18 +2812,42 @@ button {
   gap: var(--space-6);
 }
 
-@media (max-width: 1024px) {
+@media (min-width: 641px) and (max-width: 1024px) {
   .profile-projects-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: var(--space-4) !important;
   }
 }
 
 @media (max-width: 640px) {
   .profile-projects-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
+    gap: var(--space-4);
   }
 }
 
+/* Card Cover Image Skeleton Shimmer */
+.k10-card-skeleton {
+  position: absolute;
+  inset: 0;
+  background-color: var(--color-surface-sunken);
+  background-image: linear-gradient(
+    90deg,
+    rgba(226, 221, 212, 0) 0%,
+    rgba(226, 221, 212, 0.45) 50%,
+    rgba(226, 221, 212, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: cardSkeletonShimmer 1.4s ease-in-out infinite;
+  z-index: 1;
+  pointer-events: none;
+}
 
-
-
+@keyframes cardSkeletonShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}

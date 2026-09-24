@@ -643,9 +643,9 @@ export default function ProjectsGalleryPage() {
                         role="list"
                         aria-label={`${lvl.name} UNIHIKER K10 Tutorials`}
                       >
-                        {displayItems.map((tutorial) => (
+                        {displayItems.map((tutorial, idx) => (
                           <div key={tutorial.id} role="listitem" style={{ height: '100%' }}>
-                            <ProjectCard project={tutorial} isCurrentAuthor={isCurrentAuthor} />
+                            <ProjectCard project={tutorial} isCurrentAuthor={isCurrentAuthor} priority={idx < 2} />
                           </div>
                         ))}
                       </div>
@@ -732,15 +732,9 @@ export default function ProjectsGalleryPage() {
                       </button>
                     </div>
 
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                        gap: 'var(--space-6)',
-                      }}
-                    >
-                      {levelItems.map((p) => (
-                        <ProjectCard key={p.id} project={p} isCurrentAuthor={isCurrentAuthor} />
+                    <div className="projects-gallery-grid">
+                      {levelItems.map((p, idx) => (
+                        <ProjectCard key={p.id} project={p} isCurrentAuthor={isCurrentAuthor} priority={idx < 3} />
                       ))}
                     </div>
                   </section>
@@ -749,15 +743,9 @@ export default function ProjectsGalleryPage() {
             </div>
           ) : (
             /* Clean Hackster-style Grid */
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                gap: 'var(--space-6)',
-              }}
-            >
-              {filteredItems.map((p) => (
-                <ProjectCard key={p.id} project={p} isCurrentAuthor={isCurrentAuthor} />
+            <div className="projects-gallery-grid">
+              {filteredItems.map((p, idx) => (
+                <ProjectCard key={p.id} project={p} isCurrentAuthor={isCurrentAuthor} priority={idx < 4} />
               ))}
             </div>
           )}

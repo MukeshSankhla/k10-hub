@@ -740,7 +740,7 @@ export default function ProfilePage() {
 
       {/* Main container with nav-height padding-top to prevent top cutoff under fixed navbar */}
       <main style={{ flex: 1, paddingTop: 'calc(var(--nav-height) + var(--space-8))', paddingBottom: 'var(--space-16)' }}>
-        <div className="container" style={{ maxWidth: 920 }}>
+        <div className="container">
           
           {/* Main User Card */}
           <div

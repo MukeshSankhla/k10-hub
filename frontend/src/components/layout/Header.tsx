@@ -14,12 +14,18 @@ import {
   ArrowRight,
   HelpCircle,
   Info,
+  ShoppingCart,
+  ExternalLink,
+  LogIn,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import UserBadge, { isKnownAdmin } from '../common/UserBadge';
 import NotificationBell from '../notifications/NotificationBell';
 import EmailVerificationBanner from '../auth/EmailVerificationBanner';
 import { getPublicProjects, resolveProjectAuthor } from '../../services/projects/projectStorageService';
+
+export const BUY_K10_AFFILIATE_URL =
+  'https://www.dfrobot.com/product-2904.html?tracking=wilKriekbs7BI3GBJZ9IVhugyxsApTR05uQK9f1Br0N3xrQ5uLs2gnzzEIaGP7Qm';
 
 const NAV_LINKS = [
   { label: 'Projects', href: '/projects' },
@@ -484,6 +490,19 @@ export default function Header() {
             {/* Notification Bell */}
             {user && <NotificationBell />}
 
+            {/* Buy UNIHIKER K10 Affiliate Button */}
+            <a
+              href={BUY_K10_AFFILIATE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="nav__buy-btn btn btn--accent"
+              title="STEM AI Agent Coding Board | UNIHIKER K10 - Vision, Voice, TinyML | DFRobot"
+              aria-label="Buy UNIHIKER K10 on DFRobot"
+            >
+              <ShoppingCart size={15} />
+              <span>Buy K10</span>
+            </a>
+
             {/* Auth section */}
             {user ? (
               <div style={{ position: 'relative' }} ref={dropdownRef} className="nav__auth-desktop">
@@ -649,43 +668,36 @@ export default function Header() {
                 )}
               </div>
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }} className="nav__auth-desktop">
+              <div style={{ display: 'flex', alignItems: 'center' }} className="nav__auth-desktop">
                 <Link
                   to="/login"
-                  className="btn btn--ghost nav__guest-signin"
+                  className="btn btn--secondary nav__guest-signin"
                   style={{
                     height: '42px',
                     padding: '0 18px',
-                    fontSize: '14.5px',
+                    fontSize: '13.5px',
                     fontWeight: 600,
-                    borderRadius: '8px',
+                    borderRadius: 'var(--radius-md)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '7px',
                     color: 'var(--color-ink-primary)',
+                    whiteSpace: 'nowrap',
                   }}
                 >
-                  Sign In
-                </Link>
-                <Link
-                  to="/signup"
-                  className="btn btn--primary"
-                  style={{
-                    height: '42px',
-                    padding: '0 20px',
-                    fontSize: '14.5px',
-                    fontWeight: 600,
-                    borderRadius: '8px',
-                  }}
-                >
-                  Sign Up
+                  <LogIn size={15} />
+                  <span>Sign In</span>
                 </Link>
               </div>
             )}
 
             <button
-              className="nav__mobile-toggle btn"
+              type="button"
+              className="nav__mobile-toggle"
               onClick={() => setMobileOpen(!mobileOpen)}
-              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+              aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
               aria-expanded={mobileOpen}
-              style={{ width: 42, height: 42, borderRadius: '8px' }}
+              title={mobileOpen ? 'Close menu' : 'Open menu'}
             >
               {mobileOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
@@ -973,6 +985,32 @@ export default function Header() {
               </div>
             </div>
           )}
+
+          {/* Buy UNIHIKER K10 Affiliate CTA */}
+          <div style={{ marginBottom: '18px' }}>
+            <a
+              href={BUY_K10_AFFILIATE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn--accent"
+              style={{
+                width: '100%',
+                justifyContent: 'center',
+                height: '44px',
+                fontSize: '14px',
+                fontWeight: 600,
+                borderRadius: '8px',
+                gap: '8px',
+                textDecoration: 'none',
+                boxShadow: '0 2px 8px rgba(29, 78, 216, 0.22)',
+              }}
+              title="STEM AI Agent Coding Board | UNIHIKER K10 - Vision, Voice, TinyML | DFRobot"
+            >
+              <ShoppingCart size={16} />
+              <span>Buy UNIHIKER K10</span>
+              <ExternalLink size={14} style={{ opacity: 0.8 }} />
+            </a>
+          </div>
 
           {/* Primary Navigation Links */}
           <div style={{ marginBottom: '16px' }}>
