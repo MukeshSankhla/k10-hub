@@ -15,6 +15,7 @@ import {
   Activity,
   RotateCcw,
   Check,
+  Smartphone,
 } from 'lucide-react';
 import { ProjectDetail, FirmwareConfig } from '../../config/projectsData';
 import { serialService, ConnectedDeviceInfo } from '../../services/flasher/serialService';
@@ -48,7 +49,23 @@ export default function WebFlasherPanel({ project, onFlashSuccess }: WebFlasherP
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [deviceInfo, setDeviceInfo] = useState<ConnectedDeviceInfo | null>(null);
-  const baudRate = 921600;
+  const [baudRate, setBaudRate] = useState<number>(serialService.isMobile() ? 460800 : 921600);
+  const [flagCopied, setFlagCopied] = useState(false);
+  const [showBaudSettings, setShowBaudSettings] = useState(false);
+
+  const isMobile = serialService.isMobile();
+  const isAndroidChrome = serialService.isAndroidChrome();
+  const isIOS = serialService.isIOS();
+
+  const handleCopyChromeFlag = async () => {
+    try {
+      await navigator.clipboard.writeText('chrome://flags#enable-web-serial-on-android');
+      setFlagCopied(true);
+      setTimeout(() => setFlagCopied(false), 3000);
+    } catch {
+      // Fallback
+    }
+  };
 
   // Flashing State
   const [phase, setPhase] = useState<FlashPhase>('idle');
@@ -451,29 +468,153 @@ export default function WebFlasherPanel({ project, onFlashSuccess }: WebFlasherP
           </div>
         </div>
 
-        {/* Browser Web Serial Warning */}
-        {!isBrowserSupported && (
+        {/* Mobile Web Serial Ready Card (When supported on Mobile) */}
+        {isBrowserSupported && isMobile && (
           <div
             style={{
-              backgroundColor: 'rgba(239, 68, 68, 0.08)',
-              border: '1px solid rgba(239, 68, 68, 0.25)',
+              backgroundColor: 'rgba(16, 185, 129, 0.08)',
+              border: '1px solid rgba(16, 185, 129, 0.28)',
               borderRadius: '10px',
-              padding: '10px 12px',
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '10px',
+              padding: '12px 14px',
               marginBottom: 'var(--space-4)',
-              color: 'rgb(220, 38, 38)',
               fontSize: '12px',
               lineHeight: 1.45,
             }}
           >
-            <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 2 }} />
-            <span>
-              Web Serial API is unavailable. Please open this page in <strong>Google Chrome</strong>,{' '}
-              <strong>Microsoft Edge</strong>, or Chromium on desktop to flash firmware.
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#059669', fontWeight: 700, marginBottom: '4px' }}>
+              <Smartphone size={16} />
+              <span>Mobile Web Serial Ready (USB-OTG)</span>
+            </div>
+            <p style={{ margin: 0, color: 'var(--color-ink-secondary)', fontSize: '11.5px' }}>
+              Connect your UNIHIKER K10 with a USB-C to USB-C cable or USB-OTG adapter. When you tap <strong>Flash Firmware</strong>, tap <strong>Allow</strong> when Android asks for USB device permission.
+            </p>
+            <div style={{ marginTop: '6px', fontSize: '10.5px', color: 'var(--color-ink-tertiary)' }}>
+              💡 <em>Phone not seeing K10? Ensure &ldquo;OTG Connection&rdquo; is toggled ON in Android Settings.</em>
+            </div>
           </div>
+        )}
+
+        {/* Browser Web Serial Setup / Warnings when Unsupported */}
+        {!isBrowserSupported && (
+          <>
+            {isAndroidChrome ? (
+              <div
+                style={{
+                  backgroundColor: 'rgba(37, 99, 235, 0.07)',
+                  border: '1px solid rgba(37, 99, 235, 0.28)',
+                  borderRadius: '10px',
+                  padding: '14px',
+                  marginBottom: 'var(--space-4)',
+                  fontSize: '12px',
+                  lineHeight: 1.45,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-accent)', fontWeight: 700, marginBottom: '6px' }}>
+                  <Smartphone size={16} />
+                  <span>Flash from Chrome on Android (USB-OTG)</span>
+                </div>
+                <p style={{ margin: '0 0 10px 0', color: 'var(--color-ink-secondary)', fontSize: '11.5px' }}>
+                  Google Chrome on Android supports Web Serial flashing over USB-OTG! Enable Chrome&apos;s Web Serial feature flag once to start flashing directly from your phone:
+                </p>
+
+                {/* 1-Tap Copy Flag Box */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '8px',
+                    backgroundColor: 'var(--color-paper)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: '8px',
+                    padding: '8px 10px',
+                    marginBottom: '10px',
+                  }}
+                >
+                  <code style={{ fontSize: '11px', color: 'var(--color-ink-primary)', wordBreak: 'break-all', fontFamily: 'monospace' }}>
+                    chrome://flags#enable-web-serial-on-android
+                  </code>
+                  <button
+                    type="button"
+                    onClick={handleCopyChromeFlag}
+                    className="btn btn--secondary btn--sm"
+                    style={{
+                      flexShrink: 0,
+                      gap: '4px',
+                      padding: '4px 10px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      backgroundColor: flagCopied ? '#10b981' : undefined,
+                      color: flagCopied ? '#fff' : undefined,
+                      borderColor: flagCopied ? '#10b981' : undefined,
+                    }}
+                  >
+                    {flagCopied ? (
+                      <>
+                        <Check size={12} />
+                        <span>Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={12} />
+                        <span>Copy Flag URL</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <ol style={{ margin: 0, paddingLeft: '18px', color: 'var(--color-ink-secondary)', fontSize: '11.5px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <li>Open a new tab, paste the URL into your Chrome address bar, and press Enter.</li>
+                  <li>Set <strong>Enable Web Serial on Android</strong> to <strong>Enabled</strong>.</li>
+                  <li>Tap the blue <strong>Relaunch</strong> button at the bottom of Chrome.</li>
+                  <li>Plug your UNIHIKER K10 with an OTG cable and return here to flash!</li>
+                </ol>
+              </div>
+            ) : isIOS ? (
+              <div
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                  borderRadius: '10px',
+                  padding: '12px',
+                  marginBottom: 'var(--space-4)',
+                  color: 'rgb(220, 38, 38)',
+                  fontSize: '12px',
+                  lineHeight: 1.45,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, marginBottom: '4px' }}>
+                  <Smartphone size={16} />
+                  <span>iOS Safari / WebKit Limitation</span>
+                </div>
+                <p style={{ margin: 0, fontSize: '11.5px' }}>
+                  Apple iOS restricts hardware USB OTG and Web Serial access in all browsers. To flash your K10, please use <strong>Google Chrome on Android</strong> (with OTG cable) or a <strong>PC / Mac / Linux</strong> computer.
+                </p>
+              </div>
+            ) : (
+              <div
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                  borderRadius: '10px',
+                  padding: '10px 12px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '10px',
+                  marginBottom: 'var(--space-4)',
+                  color: 'rgb(220, 38, 38)',
+                  fontSize: '12px',
+                  lineHeight: 1.45,
+                }}
+              >
+                <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+                <span>
+                  Web Serial API is unavailable in this browser. Please open this page in <strong>Google Chrome</strong>,{' '}
+                  <strong>Microsoft Edge</strong>, or Chromium on desktop (or Chrome on Android via USB-OTG).
+                </span>
+              </div>
+            )}
+          </>
         )}
 
         {/* Firmware Version Selection Section */}
@@ -591,24 +732,74 @@ export default function WebFlasherPanel({ project, onFlashSuccess }: WebFlasherP
             </div>
 
             <div
+              onClick={() => setShowBaudSettings(!showBaudSettings)}
+              title="Click to customize serial baud rate"
               style={{
                 backgroundColor: 'var(--color-paper)',
-                border: '1px solid var(--color-border)',
+                border: showBaudSettings ? '1px solid var(--color-accent)' : '1px solid var(--color-border)',
                 borderRadius: '6px',
                 padding: '6px 8px',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '2px',
+                cursor: 'pointer',
               }}
             >
-              <span style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--color-ink-tertiary)', fontWeight: 600 }}>
-                Baud Rate
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--color-ink-tertiary)', fontWeight: 600 }}>
+                  Baud Rate
+                </span>
+                <span style={{ fontSize: '9px', color: 'var(--color-accent)' }}>⚙</span>
+              </div>
               <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-ink-primary)' }}>
-                921.6k bps
+                {(baudRate / 1000).toFixed(1)}k bps
               </span>
             </div>
           </div>
+
+          {/* Collapsible Baud Rate Picker */}
+          {showBaudSettings && (
+            <div
+              style={{
+                marginTop: '8px',
+                padding: '8px 10px',
+                backgroundColor: 'var(--color-paper)',
+                border: '1px solid var(--color-border)',
+                borderRadius: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '6px',
+              }}
+            >
+              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-ink-secondary)' }}>
+                Serial Baud:
+              </span>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {[921600, 460800, 115200].map((rate) => (
+                  <button
+                    key={rate}
+                    type="button"
+                    onClick={() => setBaudRate(rate)}
+                    disabled={isFlashingActive}
+                    style={{
+                      border: baudRate === rate ? '1.5px solid var(--color-accent)' : '1px solid var(--color-border)',
+                      backgroundColor: baudRate === rate ? 'rgba(29, 78, 216, 0.08)' : 'var(--color-surface)',
+                      color: baudRate === rate ? 'var(--color-accent)' : 'var(--color-ink-secondary)',
+                      borderRadius: '4px',
+                      padding: '3px 8px',
+                      fontSize: '10.5px',
+                      fontWeight: baudRate === rate ? 700 : 500,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {rate === 921600 ? '921.6k (PC)' : rate === 460800 ? '460.8k (OTG)' : '115.2k (Safe)'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Live Multi-Stage Flashing Progress Bar */}

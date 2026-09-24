@@ -501,6 +501,47 @@ function AdaptiveCameraController({
   return null;
 }
 
+// ─── Procedural Soft Ground Shadow ───────────────────────────────────────────
+function SoftGroundShadow() {
+  const shaderArgs = useRef({
+    uniforms: {
+      color: { value: new THREE.Color('#1C1917') },
+      opacity: { value: 0.32 },
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 color;
+      uniform float opacity;
+      varying vec2 vUv;
+      void main() {
+        vec2 p = (vUv - vec2(0.5)) * 2.0;
+        p.y *= 1.3;
+        float dist = length(p);
+        if (dist > 1.0) discard;
+        float core = smoothstep(0.35, 0.0, dist);
+        float halo = smoothstep(1.0, 0.0, dist) * smoothstep(1.0, 0.15, dist);
+        float alpha = (core * 0.45 + halo * 0.55) * opacity;
+        gl_FragColor = vec4(color, alpha);
+      }
+    `,
+    transparent: true,
+    depthWrite: false,
+  });
+
+  return (
+    <mesh position={[0, -1.479, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <circleGeometry args={[1.8, 64]} />
+      <shaderMaterial args={[shaderArgs.current]} />
+    </mesh>
+  );
+}
+
 // ─── 3D Canvas Scene ─────────────────────────────────────────────────────────
 function K10Scene({
   modelUrl,
@@ -547,13 +588,17 @@ function K10Scene({
         <ComponentCallout comp={activeCallout.comp} position={activeCallout.point} />
       )}
 
-      {/* High-fidelity ground contact shadow with expansive bounds (scale=20) so shadows fade seamlessly without hard quad clipping at any angle */}
+      {/* Soft continuous radial ambient shadow — fades out to exact zero at circular boundary with zero hard edges */}
+      <SoftGroundShadow />
+
+      {/* Tight ground contact shadow for the board's base connectors and pins.
+          far={1.15} ensures shadow depth reaches zero before the top edge of the board, completely preventing any straight cutoffs */}
       <ContactShadows
         position={[0, -1.48, 0]}
-        opacity={0.32}
-        scale={20}
-        blur={2.5}
-        far={5}
+        opacity={0.34}
+        scale={4.6}
+        blur={2.4}
+        far={1.15}
         resolution={1024}
         color="#1C1917"
       />

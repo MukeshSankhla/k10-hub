@@ -32,7 +32,12 @@ const FAQS: FAQItem[] = [
   {
     category: 'flashing',
     question: 'Why is my K10 board not detected when connecting to flash?',
-    answer: 'First, make sure you are using a certified USB data cable (some charging cables only carry power, not data). Second, verify that you are on Chrome or Edge on desktop (Web Serial is not supported in Safari or mobile browsers). If still unrecognized, hold down the BOOT button, plug in the cable, and release to enter ROM bootloader mode.',
+    answer: 'First, make sure you are using a certified USB data cable (some cables only provide power without data lines). Second, verify that you are on Google Chrome, Microsoft Edge, Brave, or Opera on desktop, or Google Chrome on Android with USB-OTG enabled. (Apple iOS Safari/Chrome restricts Web Serial due to WebKit policies). If still unrecognized, hold down the physical BOOT button on the K10, plug in the USB cable, and release to enter ROM bootloader mode.',
+  },
+  {
+    category: 'flashing',
+    question: 'Can I flash firmware directly from my Android smartphone or tablet?',
+    answer: 'Yes! Google Chrome on Android supports Web Serial flashing over a USB-C to USB-C cable or USB-A OTG adapter. To enable it on Android, paste "chrome://flags#enable-web-serial-on-android" into your Chrome address bar, set it to "Enabled", tap "Relaunch", and connect your K10. Make sure "OTG Connection" is turned ON in your phone\'s system settings if required.',
   },
   {
     category: 'hardware',

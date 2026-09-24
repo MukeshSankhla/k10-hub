@@ -12,6 +12,8 @@ import {
   BookOpen,
   Cpu,
   ArrowRight,
+  HelpCircle,
+  Info,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import UserBadge, { isKnownAdmin } from '../common/UserBadge';
@@ -484,7 +486,7 @@ export default function Header() {
 
             {/* Auth section */}
             {user ? (
-              <div style={{ position: 'relative' }} ref={dropdownRef}>
+              <div style={{ position: 'relative' }} ref={dropdownRef} className="nav__auth-desktop">
                 <button
                   type="button"
                   className="nav__user-btn"
@@ -647,7 +649,7 @@ export default function Header() {
                 )}
               </div>
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }} className="nav__auth-desktop">
                 <Link
                   to="/login"
                   className="btn btn--ghost nav__guest-signin"
@@ -691,29 +693,81 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Mobile Menu */}
+      {/* Mobile Side Menu Backdrop Overlay */}
       {mobileOpen && (
         <div
-          style={{
-            position: 'fixed',
-            top: 'var(--nav-height)',
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'var(--color-paper)',
-            zIndex: 99,
-            padding: 'var(--space-6)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 'var(--space-2)',
-            borderTop: '1px solid var(--color-border)',
-            overflowY: 'auto',
-            WebkitOverflowScrolling: 'touch',
-          }}
-          role="dialog"
-          aria-label="Mobile navigation"
-        >
-          {/* Mobile Search Form */}
+          className="nav__mobile-overlay"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Mobile Side Menu Drawer (Slides out from right) */}
+      <aside
+        className={`nav__mobile-drawer ${mobileOpen ? 'nav__mobile-drawer--open' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Navigation menu"
+      >
+        {/* Drawer Header */}
+        <div className="nav__mobile-drawer-header">
+          <Link
+            to="/"
+            onClick={() => setMobileOpen(false)}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}
+          >
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                background: 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <svg width="28" height="28" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="1" y="1" width="6" height="6" rx="1.5" fill="var(--color-ink-primary)" />
+                <rect x="9" y="1" width="6" height="6" rx="1.5" fill="var(--color-ink-primary)" opacity="0.55" />
+                <rect x="1" y="9" width="6" height="6" rx="1.5" fill="var(--color-ink-primary)" opacity="0.55" />
+                <rect x="9" y="9" width="6" height="6" rx="1.5" fill="var(--color-ink-primary)" />
+              </svg>
+            </div>
+            <div>
+              <div style={{ fontSize: '17px', fontWeight: 800, color: 'var(--color-ink-primary)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+                K10 Hub
+              </div>
+              <div style={{ fontSize: '11px', fontWeight: 500, color: 'var(--color-ink-tertiary)', letterSpacing: '0.02em' }}>
+                UNIHIKER K10 Platform
+              </div>
+            </div>
+          </Link>
+
+          <button
+            type="button"
+            onClick={() => setMobileOpen(false)}
+            aria-label="Close menu"
+            style={{
+              background: 'none',
+              border: '1px solid var(--color-border)',
+              borderRadius: '8px',
+              width: 36,
+              height: 36,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'var(--color-ink-primary)',
+            }}
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Drawer Scrollable Content */}
+        <div className="nav__mobile-drawer-body">
+          {/* Mobile Search Input */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -722,7 +776,7 @@ export default function Header() {
                 navigate(`/projects?q=${encodeURIComponent(cleanSearch)}`);
               }
             }}
-            style={{ marginBottom: 'var(--space-3)' }}
+            style={{ marginBottom: '16px' }}
           >
             <div
               style={{
@@ -730,11 +784,12 @@ export default function Header() {
                 alignItems: 'center',
                 backgroundColor: 'var(--color-surface)',
                 border: '1px solid var(--color-border)',
-                borderRadius: 'var(--radius-full)',
-                padding: '8px 14px',
+                borderRadius: '10px',
+                padding: '8px 12px',
+                boxShadow: 'var(--shadow-xs)',
               }}
             >
-              <Search size={16} style={{ color: 'var(--color-ink-tertiary)', marginRight: 8 }} />
+              <Search size={16} style={{ color: 'var(--color-ink-tertiary)', marginRight: 8, flexShrink: 0 }} />
               <input
                 type="text"
                 value={searchQuery}
@@ -749,94 +804,260 @@ export default function Header() {
                   width: '100%',
                 }}
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: 'var(--color-ink-tertiary)' }}
+                  aria-label="Clear search text"
+                >
+                  <X size={14} />
+                </button>
+              )}
             </div>
           </form>
 
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              to={link.href}
-              onClick={() => setMobileOpen(false)}
+          {/* User Account / Profile Section */}
+          {user ? (
+            <div
               style={{
-                display: 'block',
-                padding: 'var(--space-3) var(--space-4)',
-                fontSize: 'var(--text-lg)',
-                fontWeight: 500,
-                color: 'var(--color-ink-primary)',
-                textDecoration: 'none',
-                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--color-paper)',
+                border: '1px solid var(--color-border)',
+                borderRadius: '12px',
+                padding: '12px 14px',
+                marginBottom: '18px',
               }}
             >
-              {link.label}
-            </Link>
-          ))}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={displayName}
+                    style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: '50%',
+                      backgroundColor: 'var(--color-ink-primary)',
+                      color: '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '15px',
+                      fontWeight: 700,
+                    }}
+                  >
+                    {displayName.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div style={{ overflow: 'hidden', flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <span style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--color-ink-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {displayName}
+                    </span>
+                    <UserBadge role={role} size={15} />
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: 'var(--color-ink-tertiary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {profile?.email || user.email}
+                  </div>
+                </div>
+              </div>
 
-          {user ? (
-            <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--color-border)' }}>
-              <Link
-                to="/profile"
-                onClick={() => setMobileOpen(false)}
-                style={{
-                  display: 'block',
-                  padding: 'var(--space-3) var(--space-4)',
-                  fontSize: 'var(--text-base)',
-                  fontWeight: 600,
-                  color: 'var(--color-ink-primary)',
-                  textDecoration: 'none',
-                }}
-              >
-                Profile ({displayName})
-              </Link>
-              {role === 'admin' && (
+              {/* User quick links */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', borderTop: '1px solid var(--color-border)', paddingTop: '8px' }}>
                 <Link
-                  to="/admin"
+                  to="/profile"
                   onClick={() => setMobileOpen(false)}
                   style={{
-                    display: 'block',
-                    padding: 'var(--space-3) var(--space-4)',
-                    fontSize: 'var(--text-base)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '8px 10px',
+                    fontSize: '13.5px',
                     fontWeight: 600,
-                    color: 'rgb(220, 38, 38)',
+                    color: 'var(--color-ink-primary)',
                     textDecoration: 'none',
+                    borderRadius: '6px',
                   }}
+                  className="nav__dropdown-item"
                 >
-                  Admin Dashboard
+                  <User size={15} style={{ color: 'var(--color-accent)' }} />
+                  <span>My Profile</span>
                 </Link>
-              )}
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileOpen(false);
-                  handleSignOut();
-                }}
-                className="btn btn--secondary"
-                style={{ width: '100%', marginTop: 'var(--space-3)', justifyContent: 'center' }}
-              >
-                Sign Out
-              </button>
+
+                {role === 'admin' && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setMobileOpen(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 10px',
+                      fontSize: '13.5px',
+                      fontWeight: 600,
+                      color: 'rgb(220, 38, 38)',
+                      textDecoration: 'none',
+                      borderRadius: '6px',
+                    }}
+                    className="nav__dropdown-item"
+                  >
+                    <Shield size={15} />
+                    <span>Admin Dashboard</span>
+                  </Link>
+                )}
+
+                {role === 'user' && (
+                  <Link
+                    to="/profile"
+                    onClick={() => setMobileOpen(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 10px',
+                      fontSize: '13.5px',
+                      fontWeight: 600,
+                      color: 'var(--color-accent)',
+                      textDecoration: 'none',
+                      borderRadius: '6px',
+                    }}
+                    className="nav__dropdown-item"
+                  >
+                    <Sparkles size={15} />
+                    <span>Apply for Author</span>
+                  </Link>
+                )}
+              </div>
             </div>
           ) : (
-            <div style={{ marginTop: 'auto', paddingTop: 'var(--space-6)', borderTop: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-              <Link
-                to="/login"
-                className="btn btn--secondary"
+            /* Guest Card */
+            <div
+              style={{
+                backgroundColor: 'var(--color-paper)',
+                border: '1px solid var(--color-border)',
+                borderRadius: '12px',
+                padding: '14px',
+                marginBottom: '18px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+              }}
+            >
+              <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--color-ink-primary)' }}>
+                Maker Community
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--color-ink-tertiary)', lineHeight: 1.4 }}>
+                Sign in to bookmark builds, publish tutorials, and flash UNIHIKER K10.
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '4px' }}>
+                <Link
+                  to="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="btn btn--secondary"
+                  style={{ justifyContent: 'center', height: '40px', fontSize: '13.5px', fontWeight: 600 }}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/signup"
+                  onClick={() => setMobileOpen(false)}
+                  className="btn btn--primary"
+                  style={{ justifyContent: 'center', height: '40px', fontSize: '13.5px', fontWeight: 600 }}
+                >
+                  Sign Up
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* Primary Navigation Links */}
+          <div style={{ marginBottom: '16px' }}>
+            <div
+              style={{
+                fontSize: '10.5px',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                color: 'var(--color-ink-tertiary)',
+                padding: '4px 10px 8px 10px',
+              }}
+            >
+              Explore
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <NavLink
+                to="/projects"
                 onClick={() => setMobileOpen(false)}
-                style={{ width: '100%', justifyContent: 'center' }}
+                className={({ isActive }) => `nav__mobile-link ${isActive ? 'nav__mobile-link--active' : ''}`}
               >
-                Sign In
-              </Link>
-              <Link
-                to="/signup"
-                className="btn btn--primary"
+                <Cpu size={17} style={{ color: 'var(--color-accent)' }} />
+                <span>Projects Gallery</span>
+              </NavLink>
+
+              <NavLink
+                to="/tutorials"
                 onClick={() => setMobileOpen(false)}
-                style={{ width: '100%', justifyContent: 'center' }}
+                className={({ isActive }) => `nav__mobile-link ${isActive ? 'nav__mobile-link--active' : ''}`}
               >
-                Sign Up
-              </Link>
+                <BookOpen size={17} style={{ color: 'rgb(202, 138, 4)' }} />
+                <span>Tutorials & Guides</span>
+              </NavLink>
+
+              <NavLink
+                to="/faq"
+                onClick={() => setMobileOpen(false)}
+                className={({ isActive }) => `nav__mobile-link ${isActive ? 'nav__mobile-link--active' : ''}`}
+              >
+                <HelpCircle size={17} style={{ color: 'var(--color-ink-secondary)' }} />
+                <span>FAQ & Troubleshooting</span>
+              </NavLink>
+
+              <NavLink
+                to="/about"
+                onClick={() => setMobileOpen(false)}
+                className={({ isActive }) => `nav__mobile-link ${isActive ? 'nav__mobile-link--active' : ''}`}
+              >
+                <Info size={17} style={{ color: 'var(--color-ink-secondary)' }} />
+                <span>About K10 Hub</span>
+              </NavLink>
+            </div>
+          </div>
+        </div>
+
+        {/* Drawer Footer */}
+        <div className="nav__mobile-drawer-footer">
+          {user ? (
+            <button
+              type="button"
+              onClick={() => {
+                setMobileOpen(false);
+                handleSignOut();
+              }}
+              className="btn btn--secondary"
+              style={{
+                width: '100%',
+                justifyContent: 'center',
+                gap: '8px',
+                height: '42px',
+                color: 'var(--color-ink-secondary)',
+                fontWeight: 600,
+              }}
+            >
+              <LogOut size={16} />
+              <span>Sign Out</span>
+            </button>
+          ) : (
+            <div style={{ textAlign: 'center', fontSize: '11px', color: 'var(--color-ink-tertiary)' }}>
+              UNIHIKER K10 Platform • Learn. Build. Flash.
             </div>
           )}
         </div>
-      )}
+      </aside>
     </>
   );
 }

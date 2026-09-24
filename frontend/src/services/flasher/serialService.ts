@@ -26,6 +26,31 @@ export const serialService = {
   },
 
   /**
+   * Detects whether the user is on a mobile device.
+   */
+  isMobile(): boolean {
+    if (typeof navigator === 'undefined') return false;
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  },
+
+  /**
+   * Detects whether the user is on Google Chrome / Chromium on Android.
+   */
+  isAndroidChrome(): boolean {
+    if (typeof navigator === 'undefined') return false;
+    const ua = navigator.userAgent;
+    return /Android/i.test(ua) && (/Chrome/i.test(ua) || /Chromium/i.test(ua));
+  },
+
+  /**
+   * Detects whether the user is on Apple iOS (where Apple WebKit blocks Web Serial).
+   */
+  isIOS(): boolean {
+    if (typeof navigator === 'undefined') return false;
+    return /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  },
+
+  /**
    * Requests a serial port from the browser.
    * Must be triggered directly by a user gesture.
    */
