@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase, isSupabaseConfigured } from '../services/supabase';
 import { api, setAuthTokenGetter, UserProfile, AuthorApplication, UserRole, ProjectSummary } from '../services/api';
 import { syncCurrentUserProjects, syncAuthorProfileAcrossProjects, mergeBackendAuthorProjects } from '../services/projects/projectStorageService';
+import { isKnownAdmin } from '../components/common/UserBadge';
 
 interface AuthContextType {
   user: any | null;
@@ -30,35 +31,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [application, setApplication] = useState<AuthorApplication | null>(null);
   const [contributedProjects, setContributedProjects] = useState<ProjectSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const inFlightProfilePromise = useRef<Promise<any> | null>(null);
 
   const fetchBackendProfile = useCallback(async (token?: string) => {
-    try {
-      if (token) {
-        setAuthTokenGetter(() => token);
-      }
-      const res = await api.auth.me();
-      setProfile(res.user);
-      setApplication(res.application);
-      if (res.contributedProjects) {
-        setContributedProjects(res.contributedProjects);
-        mergeBackendAuthorProjects(res.contributedProjects);
-      }
-      return { success: true, user: res.user };
-    } catch (err: any) {
-      const errMsg = err?.message || '';
-      if (errMsg.includes('ACCOUNT_SUSPENDED') || errMsg.toLowerCase().includes('suspended')) {
-        if (isSupabaseConfigured && supabase) {
-          await supabase.auth.signOut().catch(() => {});
-        }
-        setUser(null);
-        setProfile(null);
-        setApplication(null);
-        setAuthTokenGetter(() => null);
-        return { error: 'Your account has been suspended. Please contact platform administrators.' };
-      }
-      console.warn('Could not sync user profile from backend API:', err);
-      return { error: errMsg };
+    if (token) {
+      setAuthTokenGetter(() => token);
     }
+
+    if (inFlightProfilePromise.current) {
+      return inFlightProfilePromise.current;
+    }
+
+    const promise = (async () => {
+      try {
+        const res = await api.auth.me();
+        setProfile(res.user);
+        setApplication(res.application);
+        if (res.contributedProjects) {
+          setContributedProjects(res.contributedProjects);
+          mergeBackendAuthorProjects(res.contributedProjects);
+        }
+        return { success: true, user: res.user };
+      } catch (err: any) {
+        const errMsg = err?.message || '';
+        if (errMsg.includes('ACCOUNT_SUSPENDED') || errMsg.toLowerCase().includes('suspended')) {
+          if (isSupabaseConfigured && supabase) {
+            await supabase.auth.signOut().catch(() => {});
+          }
+          setUser(null);
+          setProfile(null);
+          setApplication(null);
+          setAuthTokenGetter(() => null);
+          return { error: 'Your account has been suspended. Please contact platform administrators.' };
+        }
+        console.warn('Could not sync user profile from backend API:', err);
+        return { error: errMsg };
+      } finally {
+        inFlightProfilePromise.current = null;
+      }
+    })();
+
+    inFlightProfilePromise.current = promise;
+    return promise;
   }, []);
 
   // Initialize live Supabase authentication session
@@ -150,10 +164,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const activeSession = data.session;
         setUser(data.user);
         setAuthTokenGetter(() => activeSession.access_token);
-        const profileRes = await fetchBackendProfile(activeSession.access_token);
-        if (profileRes?.error) {
-          return { error: profileRes.error };
-        }
+        // Start backend profile sync in parallel without blocking client login completion
+        fetchBackendProfile(activeSession.access_token).catch((profileErr) => {
+          console.warn('Background profile fetch notice:', profileErr);
+        });
       }
       return {};
     } catch (err: any) {
@@ -448,7 +462,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     profile?.isEmailVerified
   );
 
-  const role: UserRole = !user ? 'unknown' : (profile?.role || 'user');
+  const isAdminUser = Boolean(
+    profile?.role === 'admin' ||
+    isKnownAdmin({
+      email: user?.email || profile?.email,
+      name: profile?.name || user?.user_metadata?.full_name || user?.user_metadata?.name,
+      role: profile?.role,
+    })
+  );
+
+  const role: UserRole = !user
+    ? 'unknown'
+    : isAdminUser
+    ? 'admin'
+    : (profile?.role || 'user');
 
   return (
     <AuthContext.Provider

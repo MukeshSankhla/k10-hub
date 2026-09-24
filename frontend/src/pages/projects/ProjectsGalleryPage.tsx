@@ -287,6 +287,7 @@ export default function ProjectsGalleryPage() {
 
           {/* Hackster-style Minimal Dropdown Filter Bar */}
           <div
+            className="gallery-filter-bar"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -437,7 +438,7 @@ export default function ProjectsGalleryPage() {
             </div>
 
             {/* Right: Search & View Toggle */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="gallery-filter-search" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div style={{ position: 'relative', width: 200 }}>
                 <Search
                   size={13}

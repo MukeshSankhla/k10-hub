@@ -37,12 +37,25 @@ export interface VerifiedAuthUser {
   emailConfirmedAt: number | null;
 }
 
+interface CachedVerifiedToken {
+  user: VerifiedAuthUser;
+  expiresAt: number;
+}
+const tokenCache = new Map<string, CachedVerifiedToken>();
+
 /**
  * Verifies a real Supabase Bearer JWT token against Supabase Auth.
  */
 export async function verifyAuthToken(token: string): Promise<{ user: VerifiedAuthUser | null; error: string | null }> {
   if (!token) {
     return { user: null, error: 'No authorization token provided' };
+  }
+
+  // Fast in-memory cache check (60s TTL)
+  const now = Date.now();
+  const cached = tokenCache.get(token);
+  if (cached && cached.expiresAt > now) {
+    return { user: cached.user, error: null };
   }
 
   // Development bypass token for local development & browser tests
@@ -84,16 +97,29 @@ export async function verifyAuthToken(token: string): Promise<{ user: VerifiedAu
     const isEmailVerified = Boolean(confirmedStr);
     const userKey = metadata.user_key || metadata.userKey || undefined;
 
+    const verifiedUser: VerifiedAuthUser = {
+      uid: sbUser.id,
+      userKey,
+      email: sbUser.email || '',
+      name,
+      avatarUrl,
+      isEmailVerified,
+      emailConfirmedAt,
+    };
+
+    tokenCache.set(token, {
+      user: verifiedUser,
+      expiresAt: now + 60 * 1000,
+    });
+
+    if (tokenCache.size > 500) {
+      for (const [k, v] of tokenCache.entries()) {
+        if (v.expiresAt <= now) tokenCache.delete(k);
+      }
+    }
+
     return {
-      user: {
-        uid: sbUser.id,
-        userKey,
-        email: sbUser.email || '',
-        name,
-        avatarUrl,
-        isEmailVerified,
-        emailConfirmedAt,
-      },
+      user: verifiedUser,
       error: null,
     };
   } catch (err: any) {

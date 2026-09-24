@@ -483,7 +483,6 @@ export function syncCurrentUserProjects(currentUser?: any, currentProfile?: any)
           authorId: userId || project.authorId,
           authorEmail: userEmail || project.authorEmail,
         };
-        api.projects.update(project.id, updatedP).catch(() => {});
         return updatedP;
       }
     }

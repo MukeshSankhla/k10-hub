@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import Header from '../../components/layout/Header';
@@ -14,10 +14,17 @@ export default function LoginPage() {
   const [isResending, setIsResending] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const { signInWithEmail, isConfigured, resendVerificationEmail } = useAuth();
+  const { user, signInWithEmail, isConfigured, resendVerificationEmail } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as any)?.from?.pathname || '/';
+
+  // Automatically transition away as soon as authentication succeeds
+  useEffect(() => {
+    if (user) {
+      navigate(from, { replace: true });
+    }
+  }, [user, navigate, from]);
 
   const handleResend = async () => {
     if (!unconfirmedEmail || isResending) return;

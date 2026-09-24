@@ -533,7 +533,7 @@ function K10Scene({
     >
       {/* Neutral crisp white lighting */}
       <ambientLight intensity={0.95} color="#FFFFFF" />
-      <directionalLight position={[5, 9, 6]} intensity={1.5} color="#FFFFFF" castShadow shadow-mapSize={[1024, 1024]} />
+      <directionalLight position={[5, 9, 6]} intensity={1.5} color="#FFFFFF" />
       <directionalLight position={[-5, 4, 4]} intensity={0.8} color="#F8FAFC" />
       <directionalLight position={[0, -4, 3]} intensity={0.4} color="#FFFFFF" />
       <Environment preset="studio" />
@@ -547,7 +547,16 @@ function K10Scene({
         <ComponentCallout comp={activeCallout.comp} position={activeCallout.point} />
       )}
 
-      <ContactShadows position={[0, -1.48, 0]} opacity={0.25} scale={7.2} blur={2.2} far={3.5} color="#1C1917" />
+      {/* High-fidelity ground contact shadow with expansive bounds (scale=20) so shadows fade seamlessly without hard quad clipping at any angle */}
+      <ContactShadows
+        position={[0, -1.48, 0]}
+        opacity={0.32}
+        scale={20}
+        blur={2.5}
+        far={5}
+        resolution={1024}
+        color="#1C1917"
+      />
 
       {/* Adaptive Camera Framing based on screen & canvas dimensions */}
       <AdaptiveCameraController controlsRef={controlsRef} />

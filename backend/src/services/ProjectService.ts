@@ -210,8 +210,8 @@ export class ProjectService {
     if (supabaseUid && supabaseUid.trim()) {
       authorConditions.push(eq(projects.authorId, supabaseUid.trim()));
     }
-    const query = String(authorIdentifier).toLowerCase();
-    if (query && query !== 'undefined' && query !== 'null') {
+    const query = String(authorIdentifier).toLowerCase().trim();
+    if (query && query !== 'undefined' && query !== 'null' && isNaN(Number(query)) && query.length > 2) {
       authorConditions.push(like(projects.author, `%${query}%`));
     }
 

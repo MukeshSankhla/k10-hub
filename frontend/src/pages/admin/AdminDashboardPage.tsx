@@ -695,12 +695,18 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* Tab Navigation */}
-          <div style={{
-            display: 'flex',
-            gap: 'var(--space-2)',
-            borderBottom: '1px solid var(--color-border)',
-            marginBottom: 'var(--space-6)',
-          }}>
+          <div
+            className="admin-tab-nav"
+            style={{
+              display: 'flex',
+              gap: 'var(--space-2)',
+              borderBottom: '1px solid var(--color-border)',
+              marginBottom: 'var(--space-6)',
+              overflowX: 'auto',
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'none',
+            }}
+          >
             <button
               onClick={() => setActiveTab('users')}
               style={{
@@ -715,6 +721,8 @@ export default function AdminDashboardPage() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.4rem',
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
               }}
             >
               <Users size={16} /> User Management
@@ -734,6 +742,8 @@ export default function AdminDashboardPage() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.4rem',
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
               }}
             >
               <Award size={16} /> Author Applications
@@ -765,6 +775,8 @@ export default function AdminDashboardPage() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.4rem',
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
               }}
             >
               <FolderGit2 size={16} /> Project Verification &amp; Moderation
@@ -796,6 +808,8 @@ export default function AdminDashboardPage() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.4rem',
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
               }}
             >
               <Megaphone size={16} /> Broadcast Notifications

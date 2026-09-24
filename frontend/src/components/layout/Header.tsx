@@ -38,6 +38,18 @@ export default function Header() {
   const { user, profile, role, signOut } = useAuth();
   const navigate = useNavigate();
 
+  // Prevent background scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileOpen]);
+
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 12);
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -151,7 +163,7 @@ export default function Header() {
       <header className={`nav ${scrolled ? 'nav--scrolled' : ''}`} role="banner">
         <div className="container nav__inner">
           {/* Left: Brand Wordmark + Navigation Links aligned together */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '36px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(12px, 3vw, 36px)' }}>
             <Link to="/" className="nav__wordmark" aria-label="K10 Hub home" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
               <div className="nav__logo-mark" aria-hidden="true" style={{ width: 34, height: 34, background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <svg width="34" height="34" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -475,6 +487,7 @@ export default function Header() {
               <div style={{ position: 'relative' }} ref={dropdownRef}>
                 <button
                   type="button"
+                  className="nav__user-btn"
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                   style={{
                     display: 'flex',
@@ -513,14 +526,14 @@ export default function Header() {
                     </div>
                   )}
 
-                  <span style={{ fontSize: '14px', fontWeight: 600, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span className="nav__user-btn-name" style={{ fontSize: '14px', fontWeight: 600, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {displayName}
                   </span>
 
                   {/* Verification Tick Mark */}
                   <UserBadge role={role} size={15} />
 
-                  <ChevronDown size={14} style={{ color: 'var(--color-ink-tertiary)' }} />
+                  <ChevronDown className="nav__user-btn-chevron" size={14} style={{ color: 'var(--color-ink-tertiary)' }} />
                 </button>
 
                 {/* Dropdown Menu */}
@@ -637,7 +650,7 @@ export default function Header() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Link
                   to="/login"
-                  className="btn btn--ghost"
+                  className="btn btn--ghost nav__guest-signin"
                   style={{
                     height: '42px',
                     padding: '0 18px',
@@ -694,6 +707,8 @@ export default function Header() {
             flexDirection: 'column',
             gap: 'var(--space-2)',
             borderTop: '1px solid var(--color-border)',
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
           }}
           role="dialog"
           aria-label="Mobile navigation"

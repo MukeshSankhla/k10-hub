@@ -55,8 +55,9 @@ export default function ProjectDetailPage() {
     id ? getStoredProjectById(id) : undefined
   );
 
-  // Sync with project storage updates
+  // Sync with project storage updates & always open at Project/Tutorial Hero
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     if (id) {
       const found = getStoredProjectById(id);
       setCurrentProject(found);
@@ -765,7 +766,7 @@ export default function ProjectDetailPage() {
                     position: 'relative',
                     width: '100%',
                     height: '100%',
-                    minHeight: 340,
+                    minHeight: 'clamp(220px, 35vw, 340px)',
                     aspectRatio: '4 / 3',
                     borderRadius: '12px',
                     overflow: 'hidden',
@@ -793,16 +794,9 @@ export default function ProjectDetailPage() {
           </section>
 
           {/* ══════════════════════════════════════════════════════════════════ */}
-          {/* BODY: 3 COLUMNS (2 for Markdown Document, 1 for Firmware Flashing) */}
+          {/* BODY: Responsive Layout (Markdown Document + Firmware Flashing)   */}
           {/* ══════════════════════════════════════════════════════════════════ */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'minmax(0, 2fr) minmax(320px, 1fr)',
-              gap: 'var(--space-8)',
-              alignItems: 'start',
-            }}
-          >
+          <div className="project-detail-layout">
             {/* 2 COLUMNS: Video Embed & Markdown Document */}
             <div style={{ minWidth: 0 }}>
               {/* Video Integration Player Embed */}
