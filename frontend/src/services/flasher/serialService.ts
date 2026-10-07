@@ -117,7 +117,33 @@ export const serialService = {
       });
 
       // Synchronize stub loader with board
-      await esploader.main('default_reset');
+      try {
+        await esploader.main('default_reset');
+      } catch (firstErr: any) {
+        logger.warn(`Initial reset sync notice: ${firstErr.message}. Attempting ESP32-S3 CDC auto-reset...`);
+
+        // Retry with ESP32-S3 CDC 1200-baud touch auto-reset sequence
+        try {
+          if (transport) {
+            await transport.setBaudrate(1200);
+            await transport.setRTS(true);
+            await transport.setDTR(false);
+            await new Promise((r) => setTimeout(r, 150));
+            await transport.setRTS(false);
+            await transport.setDTR(false);
+            await new Promise((r) => setTimeout(r, 100));
+            await transport.setBaudrate(baudRate);
+          }
+        } catch (_: any) {}
+
+        // Second sync attempt
+        esploader = new ESPLoader({
+          transport,
+          baudrate: baudRate,
+          terminal: termAdapter,
+        });
+        await esploader.main('default_reset');
+      }
 
       const chipName = esploader.chip ? esploader.chip.CHIP_NAME : 'ESP32 (Generic)';
       let chipDesc = chipName;

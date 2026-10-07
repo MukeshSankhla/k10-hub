@@ -61,6 +61,8 @@ export class AndroidSerialPort {
   private _writableStream: WritableStream<Uint8Array> | null = null;
   private _streamController: ReadableStreamDefaultController<Uint8Array> | null = null;
   private _currentBaudRate = 115200;
+  private _lastDtr = false;
+  private _lastRts = false;
 
   constructor() {
     this._setupGlobalCallbacks();
@@ -100,6 +102,9 @@ export class AndroidSerialPort {
     }
 
     this._currentBaudRate = options.baudRate || 115200;
+    this._lastDtr = false;
+    this._lastRts = false;
+
     const success = window.AndroidSerialBridge.openPort(this._currentBaudRate);
 
     if (!success) {
@@ -143,12 +148,17 @@ export class AndroidSerialPort {
 
   /**
    * Sets DTR and RTS hardware control lines (critical for ESP32 bootloader synchronization & reset).
+   * Preserves state of un-specified control line to adhere to W3C Web Serial API spec.
    */
   async setSignals(signals: { dataTerminalReady?: boolean; requestToSend?: boolean }): Promise<void> {
     if (!window.AndroidSerialBridge) return;
-    const dtr = signals.dataTerminalReady ?? false;
-    const rts = signals.requestToSend ?? false;
-    window.AndroidSerialBridge.setSignals(dtr, rts);
+    if (signals.dataTerminalReady !== undefined) {
+      this._lastDtr = signals.dataTerminalReady;
+    }
+    if (signals.requestToSend !== undefined) {
+      this._lastRts = signals.requestToSend;
+    }
+    window.AndroidSerialBridge.setSignals(this._lastDtr, this._lastRts);
   }
 
   /**
