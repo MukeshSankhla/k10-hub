@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">K10 Hub</string>
+    <string name="usb_permission_title">USB Device Permission</string>
+    <string name="usb_permission_prompt">UNIHIKER K10 connected. Allow K10 Hub to access this USB device?</string>
+    <string name="usb_permission_granted">K10 USB Permission Granted</string>
+    <string name="usb_permission_denied">USB Permission Denied</string>
+    <string name="usb_connected">UNIHIKER K10 Plugged In (USB-OTG)</string>
+    <string name="usb_disconnected">UNIHIKER K10 Unplugged</string>
+    <string name="default_hub_url">https://k10hub.vercel.app/</string>
+</resources>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- CH340 / CH341 (UNIHIKER K10 Onboard USB-UART Chip) -->
+    <usb-device vendor-id="6790" />
+
+    <!-- CP210x (Silicon Labs) -->
+    <usb-device vendor-id="4292" />
+
+    <!-- ESP32-S3 / ESP32-P4 Native USB CDC & JTAG (Espressif) -->
+    <usb-device vendor-id="12346" />
+
+    <!-- FTDI FT232R / FT2232 / FT232H -->
+    <usb-device vendor-id="1027" />
+</resources>

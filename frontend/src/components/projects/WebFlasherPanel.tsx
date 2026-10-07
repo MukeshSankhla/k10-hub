@@ -56,6 +56,7 @@ export default function WebFlasherPanel({ project, onFlashSuccess }: WebFlasherP
   const isMobile = serialService.isMobile();
   const isAndroidChrome = serialService.isAndroidChrome();
   const isIOS = serialService.isIOS();
+  const isAndroidNativeApp = serialService.isAndroidNativeApp();
 
   const handleCopyChromeFlag = async () => {
     try {
@@ -468,8 +469,31 @@ export default function WebFlasherPanel({ project, onFlashSuccess }: WebFlasherP
           </div>
         </div>
 
-        {/* Mobile Web Serial Ready Card (When supported on Mobile) */}
-        {isBrowserSupported && isMobile && (
+        {/* Android Native Shell Active Card */}
+        {isAndroidNativeApp && (
+          <div
+            style={{
+              backgroundColor: 'rgba(99, 102, 241, 0.08)',
+              border: '1px solid rgba(99, 102, 241, 0.28)',
+              borderRadius: '10px',
+              padding: '12px 14px',
+              marginBottom: 'var(--space-4)',
+              fontSize: '12px',
+              lineHeight: 1.45,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#6366f1', fontWeight: 700, marginBottom: '4px' }}>
+              <Smartphone size={16} />
+              <span>Android Native USB-OTG Active</span>
+            </div>
+            <p style={{ margin: 0, color: 'var(--color-ink-secondary)', fontSize: '11.5px' }}>
+              Hardware USB flashing is routed directly through your phone&apos;s native Android USB core. Connect your UNIHIKER K10 with an OTG cable and tap <strong>Flash Firmware</strong>.
+            </p>
+          </div>
+        )}
+
+        {/* Mobile Web Serial Ready Card (When supported on Mobile browser e.g. Chrome with flag) */}
+        {!isAndroidNativeApp && isBrowserSupported && isMobile && (
           <div
             style={{
               backgroundColor: 'rgba(16, 185, 129, 0.08)',

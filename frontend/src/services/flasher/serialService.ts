@@ -4,6 +4,7 @@
 // @ts-ignore
 import { ESPLoader, Transport } from 'esptool-js/bundle.js';
 import { logger } from './loggerService';
+import { isAndroidApp, requestAndroidPort } from './androidSerialBridge';
 
 let port: any = null;
 let transport: any = null;
@@ -19,10 +20,17 @@ export interface ConnectedDeviceInfo {
 
 export const serialService = {
   /**
-   * Checks if the Web Serial API is available in the current browser.
+   * Detects whether running inside the K10-Hub Android Native Shell.
+   */
+  isAndroidNativeApp(): boolean {
+    return isAndroidApp();
+  },
+
+  /**
+   * Checks if serial flashing is available in the current environment (Native Android or Web Serial).
    */
   checkBrowserSupport(): boolean {
-    return typeof navigator !== 'undefined' && 'serial' in navigator;
+    return this.isAndroidNativeApp() || (typeof navigator !== 'undefined' && 'serial' in navigator);
   },
 
   /**
@@ -51,13 +59,19 @@ export const serialService = {
   },
 
   /**
-   * Requests a serial port from the browser.
+   * Requests a serial port from the browser or Android USB host.
    * Must be triggered directly by a user gesture.
    */
   async requestPort(): Promise<any> {
+    if (this.isAndroidNativeApp()) {
+      port = await requestAndroidPort();
+      logger.log('USB-OTG device connected via Android Native Core.');
+      return port;
+    }
+
     if (!this.checkBrowserSupport()) {
       throw new Error(
-        "Your browser doesn't support Web Serial. Please use Google Chrome, Microsoft Edge, or another Chromium-based browser."
+        "Your browser doesn't support Web Serial. Please use Google Chrome, Microsoft Edge, or the K10-Hub Android App."
       );
     }
 

@@ -1,0 +1,21 @@
+R_DEF: Internal format may change without notice
+local
+color brand_accent
+color brand_primary
+drawable ic_launcher_foreground
+id loadingIndicator
+id swipeRefreshLayout
+id webView
+layout activity_main
+mipmap ic_launcher
+mipmap ic_launcher_round
+string app_name
+string default_hub_url
+string usb_connected
+string usb_disconnected
+string usb_permission_denied
+string usb_permission_granted
+string usb_permission_prompt
+string usb_permission_title
+style Theme.K10Hub
+xml device_filter
