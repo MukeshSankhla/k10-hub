@@ -121,12 +121,12 @@ class AndroidSerialBridge(
             port.open(connection)
             port.setParameters(baudRate, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
 
-            // Initial line state: clear DTR and RTS so board is not held in reset
+            // CDC ACM spec: DTR = true signals to ESP32-S3 CDC that terminal is connected and ready to receive data
             try {
-                port.dtr = false
+                port.dtr = true
                 port.rts = false
             } catch (e: Exception) {
-                Log.w(TAG, "Initial DTR/RTS setup notice: ${e.message}")
+                Log.w(TAG, "DTR/RTS initial line state setup notice: ${e.message}")
             }
 
             usbSerialPort = port
@@ -168,6 +168,7 @@ class AndroidSerialBridge(
         val port = usbSerialPort ?: return false
         return try {
             port.dtr = dtr
+            Thread.sleep(10)
             port.rts = rts
             true
         } catch (e: Exception) {
