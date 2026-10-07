@@ -9,6 +9,9 @@ import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import com.hoho.android.usbserial.driver.CdcAcmSerialDriver
+import com.hoho.android.usbserial.driver.Ch34xSerialDriver
+import com.hoho.android.usbserial.driver.Cp21xxSerialDriver
+import com.hoho.android.usbserial.driver.FtdiSerialDriver
 import com.hoho.android.usbserial.driver.ProbeTable
 import com.hoho.android.usbserial.driver.UsbSerialDriver
 import com.hoho.android.usbserial.driver.UsbSerialPort
@@ -71,7 +74,7 @@ class AndroidSerialBridge(
         currentDevice = device
 
         if (!usbManager.hasPermission(device)) {
-            Log.d(TAG, "Requesting USB permission for device: ${device.deviceName}")
+            Log.d(TAG, "Requesting USB permission for device: ${device.deviceName} (VID: ${device.vendorId}, PID: ${device.productId})")
             activity.requestUsbPermission(device)
             response.put("success", false)
             response.put("error", "USB permission requested. Please tap Allow on the Android system prompt.")
@@ -95,7 +98,7 @@ class AndroidSerialBridge(
         }
 
         if (!usbManager.hasPermission(device)) {
-            Log.e(TAG, "Missing USB permission to open port.")
+            Log.e(TAG, "Missing USB permission to open port for device: ${device.deviceName}")
             return false
         }
 
@@ -104,26 +107,34 @@ class AndroidSerialBridge(
 
             val driver = getDriverForDevice(device)
             if (driver == null || driver.ports.isEmpty()) {
-                Log.e(TAG, "No compatible USB Serial driver found for device.")
+                Log.e(TAG, "No compatible USB Serial driver found for device VID ${device.vendorId} PID ${device.productId}")
                 return false
             }
 
             val port = driver.ports[0]
             val connection = usbManager.openDevice(device)
             if (connection == null) {
-                Log.e(TAG, "Failed to open USB device connection.")
+                Log.e(TAG, "Failed to open USB device connection for device: ${device.deviceName}")
                 return false
             }
 
             port.open(connection)
             port.setParameters(baudRate, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE)
 
+            // Initial line state: clear DTR and RTS so board is not held in reset
+            try {
+                port.dtr = false
+                port.rts = false
+            } catch (e: Exception) {
+                Log.w(TAG, "Initial DTR/RTS setup notice: ${e.message}")
+            }
+
             usbSerialPort = port
             usbConnection = connection
             currentDevice = device
 
             startReadThread()
-            Log.i(TAG, "Successfully opened port at $baudRate baud.")
+            Log.i(TAG, "Successfully opened port for ${device.productName ?: device.deviceName} (VID: ${device.vendorId}, PID: ${device.productId}) at $baudRate baud.")
             return true
         } catch (e: Exception) {
             Log.e(TAG, "Error opening serial port: ${e.message}", e)
@@ -160,7 +171,7 @@ class AndroidSerialBridge(
             port.rts = rts
             true
         } catch (e: Exception) {
-            Log.w(TAG, "Failed to set control signals: ${e.message}")
+            Log.w(TAG, "Failed to set control signals (DTR=$dtr, RTS=$rts): ${e.message}")
             false
         }
     }
@@ -216,7 +227,7 @@ class AndroidSerialBridge(
             while (isRunning.get()) {
                 val port = usbSerialPort ?: break
                 try {
-                    val bytesRead = port.read(buffer, 200)
+                    val bytesRead = port.read(buffer, 50)
                     if (bytesRead > 0) {
                         val chunk = ByteArray(bytesRead)
                         System.arraycopy(buffer, 0, chunk, 0, bytesRead)
@@ -247,14 +258,14 @@ class AndroidSerialBridge(
     }
 
     /**
-     * Probes for connected USB device matching UNIHIKER K10 (CH340, CP210x, ESP32 CDC, FTDI).
+     * Probes for connected USB device matching UNIHIKER K10 (CH340, CP210x, ESP32 CDC, FTDI, CDC-ACM).
      */
     private fun findSupportedDevice(): UsbDevice? {
         val deviceList = usbManager.deviceList
         for (device in deviceList.values) {
             val vid = device.vendorId
-            // 6790 (0x1A86 CH340), 4292 (0x10C4 CP210x), 12346 (0x303A ESP32), 1027 (0x0403 FTDI)
-            if (vid == 6790 || vid == 4292 || vid == 12346 || vid == 1027) {
+            // 6790 (CH340), 4292 (CP210x), 12346 (ESP32), 1027 (FTDI), 9025 (Arduino), 11914 (RP2040), 1155 (STM32)
+            if (vid == 6790 || vid == 4292 || vid == 12346 || vid == 1027 || vid == 9025 || vid == 11914 || vid == 1155) {
                 return device
             }
         }
@@ -263,20 +274,58 @@ class AndroidSerialBridge(
     }
 
     /**
-     * Resolves a compatible driver for the USB device.
+     * Resolves a compatible driver for the USB device with comprehensive fallback mapping.
      */
     private fun getDriverForDevice(device: UsbDevice): UsbSerialDriver? {
-        // Standard probe
+        // 1. Try default prober
         val defaultProber = UsbSerialProber.getDefaultProber()
-        val driver = defaultProber.probeDevice(device)
+        var driver = defaultProber.probeDevice(device)
         if (driver != null) return driver
 
-        // Custom probe table for ESP32-S3 / P4 native CDC-ACM
+        // 2. Try custom probe table for all common Espressif / WCH / Silicon Labs PIDs
         val customTable = ProbeTable()
-        customTable.addProduct(12346, 0x1001, CdcAcmSerialDriver::class.java) // ESP32-S3 CDC
-        customTable.addProduct(12346, 0x1002, CdcAcmSerialDriver::class.java) // ESP32-P4 CDC
+        val pid = device.productId
+        val vid = device.vendorId
+
+        when (vid) {
+            12346 -> {
+                // Espressif USB CDC ACM (ESP32-S3, ESP32-C3, ESP32-S2, ESP32-P4)
+                customTable.addProduct(vid, pid, CdcAcmSerialDriver::class.java)
+            }
+            6790 -> {
+                // WCH CH340 / CH341
+                customTable.addProduct(vid, pid, Ch34xSerialDriver::class.java)
+            }
+            4292 -> {
+                // Silicon Labs CP210x
+                customTable.addProduct(vid, pid, Cp21xxSerialDriver::class.java)
+            }
+            1027 -> {
+                // FTDI
+                customTable.addProduct(vid, pid, FtdiSerialDriver::class.java)
+            }
+            else -> {
+                // Fallback CDC-ACM
+                customTable.addProduct(vid, pid, CdcAcmSerialDriver::class.java)
+            }
+        }
+
         val customProber = UsbSerialProber(customTable)
-        return customProber.probeDevice(device)
+        driver = customProber.probeDevice(device)
+        if (driver != null) return driver
+
+        // 3. Direct driver initialization fallback if probe table failed
+        return try {
+            when (vid) {
+                6790 -> Ch34xSerialDriver(device)
+                4292 -> Cp21xxSerialDriver(device)
+                1027 -> FtdiSerialDriver(device)
+                else -> CdcAcmSerialDriver(device)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Fallback driver initialization failed for VID $vid PID $pid: ${e.message}")
+            null
+        }
     }
 
     fun onDeviceDetached() {

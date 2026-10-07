@@ -11,4 +11,13 @@
 
     <!-- FTDI FT232R / FT2232 / FT232H -->
     <usb-device vendor-id="1027" />
+
+    <!-- CDC-ACM / Arduino -->
+    <usb-device vendor-id="9025" />
+
+    <!-- RP2040 / Raspberry Pi CDC -->
+    <usb-device vendor-id="11914" />
+
+    <!-- STM32 CDC -->
+    <usb-device vendor-id="1155" />
 </resources>
