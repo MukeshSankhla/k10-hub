@@ -1,11 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Starting splash theme using Android 12+ SplashScreen API -->
+    <style name="Theme.K10Hub.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
+        <item name="postSplashScreenTheme">@style/Theme.K10Hub</item>
+    </style>
+
+    <!-- Main Application Theme -->
     <style name="Theme.K10Hub" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimary">@color/brand_accent</item>
         <item name="colorPrimaryDark">@color/brand_primary</item>
         <item name="colorAccent">@color/brand_accent</item>
         <item name="android:windowBackground">@color/brand_primary</item>
         <item name="android:statusBarColor">@color/brand_primary</item>
+        <item name="android:navigationBarColor">@color/brand_primary</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
 </resources>

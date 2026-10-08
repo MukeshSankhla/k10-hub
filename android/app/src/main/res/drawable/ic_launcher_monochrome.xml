@@ -12,23 +12,23 @@
         <!-- Top-Left Square: Solid -->
         <path
             android:pathData="M 5,2 h 6.5 a 3,3 0 0 1 3,3 v 6.5 a 3,3 0 0 1 -3,3 h -6.5 a 3,3 0 0 1 -3,-3 v -6.5 a 3,3 0 0 1 3,-3 Z"
-            android:fillColor="@color/logo_solid" />
+            android:fillColor="#FFFFFF" />
 
         <!-- Top-Right Square: Dim (45% opacity) -->
         <path
             android:pathData="M 20.5,2 h 6.5 a 3,3 0 0 1 3,3 v 6.5 a 3,3 0 0 1 -3,3 h -6.5 a 3,3 0 0 1 -3,-3 v -6.5 a 3,3 0 0 1 3,-3 Z"
-            android:fillColor="@color/logo_dim"
+            android:fillColor="#FFFFFF"
             android:fillAlpha="0.45" />
 
         <!-- Bottom-Left Square: Dim (45% opacity) -->
         <path
             android:pathData="M 5,17.5 h 6.5 a 3,3 0 0 1 3,3 v 6.5 a 3,3 0 0 1 -3,3 h -6.5 a 3,3 0 0 1 -3,-3 v -6.5 a 3,3 0 0 1 3,-3 Z"
-            android:fillColor="@color/logo_dim"
+            android:fillColor="#FFFFFF"
             android:fillAlpha="0.45" />
 
         <!-- Bottom-Right Square: Solid -->
         <path
             android:pathData="M 20.5,17.5 h 6.5 a 3,3 0 0 1 3,3 v 6.5 a 3,3 0 0 1 -3,3 h -6.5 a 3,3 0 0 1 -3,-3 v -6.5 a 3,3 0 0 1 3,-3 Z"
-            android:fillColor="@color/logo_solid" />
+            android:fillColor="#FFFFFF" />
     </group>
 </vector>

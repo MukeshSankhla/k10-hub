@@ -17,6 +17,8 @@ dist/
 dist-ssr/
 backend/dist/
 frontend/dist/
+android/**/build/
+android/.gradle/
 *.local
 
 # SQLite Database & Storage

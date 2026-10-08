@@ -418,9 +418,15 @@ export default function ProjectDetailPage() {
               Home
             </Link>
             <ChevronRight size={13} />
-            <Link to="/projects" style={{ color: 'var(--color-ink-secondary)', textDecoration: 'none' }}>
-              Projects
-            </Link>
+            {project.type === 'Tutorial' ? (
+              <Link to="/tutorials" style={{ color: 'var(--color-ink-secondary)', textDecoration: 'none' }}>
+                Tutorials
+              </Link>
+            ) : (
+              <Link to="/projects" style={{ color: 'var(--color-ink-secondary)', textDecoration: 'none' }}>
+                Projects
+              </Link>
+            )}
             <ChevronRight size={13} />
             <span style={{ color: 'var(--color-ink-primary)', fontWeight: 600 }}>{project.title}</span>
           </div>

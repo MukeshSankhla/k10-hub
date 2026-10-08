@@ -141,7 +141,7 @@ export default function ProjectCard({
     >
       {/* Cover Preview Image (4:3 Ratio) */}
       <Link
-        to={`/project/${project.id}`}
+        to={isTutorial ? `/tutorial/${project.id}` : `/project/${project.id}`}
         style={{ textDecoration: 'none', display: 'block' }}
         aria-label={`${project.title} — ${project.type || 'Project'}`}
       >
@@ -386,7 +386,7 @@ export default function ProjectCard({
       {/* Card Content */}
       <div style={{ padding: 'var(--space-5)', display: 'flex', flexDirection: 'column', flex: 1 }}>
         <Link
-          to={`/project/${project.id}`}
+          to={isTutorial ? `/tutorial/${project.id}` : `/project/${project.id}`}
           style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
         >
           <h3
@@ -525,7 +525,7 @@ export default function ProjectCard({
 
             {/* Comments */}
             <Link
-              to={`/project/${project.id}#discussion`}
+              to={isTutorial ? `/tutorial/${project.id}#discussion` : `/project/${project.id}#discussion`}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',

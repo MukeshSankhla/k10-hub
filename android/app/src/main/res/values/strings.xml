@@ -7,4 +7,9 @@
     <string name="usb_connected">UNIHIKER K10 Plugged In (USB-OTG)</string>
     <string name="usb_disconnected">UNIHIKER K10 Unplugged</string>
     <string name="default_hub_url">https://k10hub.vercel.app/</string>
+    <string name="platform_subtitle">UNIHIKER K10 Platform</string>
+    <string name="loading_message">Loading K10 Hub…</string>
+    <string name="connection_error_title">Connection Lost</string>
+    <string name="connection_error_desc">Could not reach the K10 Hub server. Please check your internet connection.</string>
+    <string name="btn_retry">Retry Connection</string>
 </resources>

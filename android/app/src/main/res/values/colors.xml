@@ -1,5 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="brand_primary">#0F172A</color>
-    <color name="brand_accent">#6366F1</color>
+    <!-- K10 Hub Editorial Design Tokens -->
+    <color name="brand_primary">#1C1917</color>
+    <color name="brand_paper">#F8F6F1</color>
+    <color name="brand_paper_warm">#F2EFE8</color>
+    <color name="brand_surface">#FFFFFF</color>
+    <color name="brand_accent">#1D4ED8</color>
+    <color name="brand_accent_hover">#1E40AF</color>
+    <color name="brand_accent_light">#DBEAFE</color>
+    <color name="brand_ink_secondary">#57534E</color>
+    <color name="brand_ink_tertiary">#A8A29E</color>
+    <color name="brand_border">#E7E2D9</color>
+    <color name="brand_border_subtle">#F0EDE6</color>
+    <color name="brand_success">#15803D</color>
+    <color name="brand_error">#B91C1C</color>
+
+    <!-- App Splash & Launcher Icon Tokens -->
+    <color name="launcher_background">#1C1917</color>
+    <color name="splash_background">#1C1917</color>
+    <color name="splash_text_primary">#F8F6F1</color>
+    <color name="splash_text_secondary">#A8A29E</color>
+    <color name="logo_solid">#F8F6F1</color>
+    <color name="logo_dim">#F8F6F1</color>
 </resources>

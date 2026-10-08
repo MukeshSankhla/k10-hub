@@ -374,7 +374,7 @@ export default function Header() {
                             onClick={() => {
                               setSearchOpen(false);
                               setSearchQuery('');
-                              navigate(`/project/${t.id}`);
+                              navigate(`/tutorial/${t.id}`);
                             }}
                             style={{
                               display: 'flex',
