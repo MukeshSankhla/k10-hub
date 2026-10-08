@@ -94,6 +94,13 @@ export default function AdminDashboardPage() {
   const hasAutoSelectedFilter = useRef(false);
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Debounced search query – only sent to API after user stops typing
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearchQuery(searchQuery), 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   // Toggle card expansion
   const toggleExpandApp = (id: number) => {
     setExpandedAppIds((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -237,7 +244,7 @@ export default function AdminDashboardPage() {
       const res = await api.admin.getUsers({
         page,
         pageSize: 15,
-        search: searchQuery,
+        search: debouncedSearchQuery,
         role: roleFilter,
         status: statusFilter,
       });
@@ -250,7 +257,7 @@ export default function AdminDashboardPage() {
     } finally {
       setUsersLoading(false);
     }
-  }, [page, searchQuery, roleFilter, statusFilter]);
+  }, [page, debouncedSearchQuery, roleFilter, statusFilter]);
 
   // Load Applications
   const loadApplications = useCallback(async () => {
@@ -265,23 +272,7 @@ export default function AdminDashboardPage() {
     }
   }, [appStatusFilter]);
 
-  useEffect(() => {
-    loadStats();
-  }, [loadStats]);
-
-  // Auto-select Author Applications filter: Pending if there are pending requests, otherwise Approved
-  useEffect(() => {
-    if (!hasAutoSelectedFilter.current && stats !== null) {
-      hasAutoSelectedFilter.current = true;
-      if (stats.pendingApplications > 0) {
-        setAppStatusFilter('pending');
-      } else {
-        setAppStatusFilter('approved');
-      }
-    }
-  }, [stats]);
-
-  // Load all users for multi-user target picker
+  // Load all users for multi-user target picker (only once)
   const loadAllUsersForPicker = useCallback(async () => {
     setLoadingAllUsers(true);
     try {
@@ -294,15 +285,43 @@ export default function AdminDashboardPage() {
     }
   }, []);
 
+  // Re-fetch users when filter/search/page changes (debounced search already applied)
   useEffect(() => {
-    if (activeTab === 'users') {
-      loadUsers();
-    } else if (activeTab === 'applications') {
-      loadApplications();
-    } else if (activeTab === 'notifications' && allUsersForSelect.length === 0) {
+    if (activeTab === 'users') loadUsers();
+  }, [loadUsers, activeTab]);
+
+  // Re-fetch applications when status filter changes
+  useEffect(() => {
+    if (activeTab === 'applications') loadApplications();
+  }, [loadApplications, activeTab]);
+
+  // Auto-select Author Applications filter after stats load
+  useEffect(() => {
+    if (!hasAutoSelectedFilter.current && stats !== null) {
+      hasAutoSelectedFilter.current = true;
+      setAppStatusFilter(stats.pendingApplications > 0 ? 'pending' : 'approved');
+    }
+  }, [stats]);
+
+  useEffect(() => {
+    // Parallel: load stats + active tab data simultaneously on mount / tab switch
+    const tabLoad = activeTab === 'users'
+      ? loadUsers
+      : activeTab === 'applications'
+      ? loadApplications
+      : null;
+
+    if (tabLoad) {
+      Promise.all([loadStats(), tabLoad()]);
+    } else {
+      loadStats();
+    }
+
+    if (activeTab === 'notifications' && allUsersForSelect.length === 0 && !loadingAllUsers) {
       loadAllUsersForPicker();
     }
-  }, [activeTab, loadUsers, loadApplications, allUsersForSelect.length, loadAllUsersForPicker]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
   const handleSendBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();

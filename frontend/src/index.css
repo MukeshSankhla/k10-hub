@@ -2148,10 +2148,7 @@ button {
   }
 
   .hero__model-container {
-    height: clamp(340px, 45vh, 460px) !important;
-    width: 100%;
-    max-width: 520px;
-    margin-inline: auto;
+    display: none !important;
   }
 
   /* Project Detail Hero & Body (Stacked Single-Column on Tablet & Phone) */

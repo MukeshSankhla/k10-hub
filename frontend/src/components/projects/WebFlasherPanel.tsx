@@ -49,14 +49,16 @@ export default function WebFlasherPanel({ project, onFlashSuccess }: WebFlasherP
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [deviceInfo, setDeviceInfo] = useState<ConnectedDeviceInfo | null>(null);
-  const [baudRate, setBaudRate] = useState<number>(serialService.isMobile() ? 460800 : 921600);
+  const [baudRate, setBaudRate] = useState<number>(
+    serialService.isAndroidNativeApp() ? 230400   // Android USB OTG bridge: stable for large files
+    : serialService.isMobile() ? 460800           // Android Chrome WebSerial
+    : 921600                                       // Desktop Chrome / Edge
+  );
   const [flagCopied, setFlagCopied] = useState(false);
   const [showBaudSettings, setShowBaudSettings] = useState(false);
 
-  const isMobile = serialService.isMobile();
   const isAndroidChrome = serialService.isAndroidChrome();
   const isIOS = serialService.isIOS();
-  const isAndroidNativeApp = serialService.isAndroidNativeApp();
 
   const handleCopyChromeFlag = async () => {
     try {
@@ -288,19 +290,26 @@ export default function WebFlasherPanel({ project, onFlashSuccess }: WebFlasherP
       setProgressSubText('Toggling DTR/RTS lines to boot new firmware...');
 
       await flasherService.resetDevice(currentLoader);
-      await new Promise((r) => setTimeout(r, 500));
 
-      // Step 5: Completed!
+      // Step 5: Auto-disconnect so the board re-enumerates cleanly
+      // This lets the next flash happen without a manual unplug/replug.
+      setProgressStatusText('Disconnecting serial port...');
+      setProgressSubText('Releasing port so the board can reboot freely...');
+      await new Promise((r) => setTimeout(r, 800));
+      stopSerialMonitor();
+      await serialService.disconnectDevice();
+      setIsConnected(false);
+      setDeviceInfo(null);
+
+      // Step 6: Completed!
       setPhase('completed');
       logger.log(`Flash sequence completed successfully for ${activeFw.name}!`);
+      logger.log('Board disconnected. Reconnect when ready for the next flash.');
 
       // Increment flash count
       incrementProjectFlashCount(project.id, activeFw.version).catch((err) => {
         console.warn('Flash count increment notice:', err);
       });
-
-      // Resume serial monitor
-      startSerialMonitor();
 
       // Trigger success modal & parent callback
       setShowSuccessModal(true);
@@ -312,9 +321,16 @@ export default function WebFlasherPanel({ project, onFlashSuccess }: WebFlasherP
       setPhase('error');
       setErrorMessage(err.message || 'Flashing procedure failed');
 
-      if (serialService.isConnected()) {
-        startSerialMonitor();
+      // Auto-disconnect on error to release the port lock.
+      // The user can simply click Flash again — it will re-connect automatically.
+      stopSerialMonitor();
+      try {
+        await serialService.disconnectDevice();
+      } catch {
+        // best-effort
       }
+      setIsConnected(false);
+      setDeviceInfo(null);
     }
   };
 
@@ -469,54 +485,6 @@ export default function WebFlasherPanel({ project, onFlashSuccess }: WebFlasherP
           </div>
         </div>
 
-        {/* Android Native Shell Active Card */}
-        {isAndroidNativeApp && (
-          <div
-            style={{
-              backgroundColor: 'rgba(99, 102, 241, 0.08)',
-              border: '1px solid rgba(99, 102, 241, 0.28)',
-              borderRadius: '10px',
-              padding: '12px 14px',
-              marginBottom: 'var(--space-4)',
-              fontSize: '12px',
-              lineHeight: 1.45,
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#6366f1', fontWeight: 700, marginBottom: '4px' }}>
-              <Smartphone size={16} />
-              <span>Android Native USB-OTG Active</span>
-            </div>
-            <p style={{ margin: 0, color: 'var(--color-ink-secondary)', fontSize: '11.5px' }}>
-              Hardware USB flashing is routed directly through your phone&apos;s native Android USB core. Connect your UNIHIKER K10 with an OTG cable and tap <strong>Flash Firmware</strong>.
-            </p>
-          </div>
-        )}
-
-        {/* Mobile Web Serial Ready Card (When supported on Mobile browser e.g. Chrome with flag) */}
-        {!isAndroidNativeApp && isBrowserSupported && isMobile && (
-          <div
-            style={{
-              backgroundColor: 'rgba(16, 185, 129, 0.08)',
-              border: '1px solid rgba(16, 185, 129, 0.28)',
-              borderRadius: '10px',
-              padding: '12px 14px',
-              marginBottom: 'var(--space-4)',
-              fontSize: '12px',
-              lineHeight: 1.45,
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#059669', fontWeight: 700, marginBottom: '4px' }}>
-              <Smartphone size={16} />
-              <span>Mobile Web Serial Ready (USB-OTG)</span>
-            </div>
-            <p style={{ margin: 0, color: 'var(--color-ink-secondary)', fontSize: '11.5px' }}>
-              Connect your UNIHIKER K10 with a USB-C to USB-C cable or USB-OTG adapter. When you tap <strong>Flash Firmware</strong>, tap <strong>Allow</strong> when Android asks for USB device permission.
-            </p>
-            <div style={{ marginTop: '6px', fontSize: '10.5px', color: 'var(--color-ink-tertiary)' }}>
-              💡 <em>Phone not seeing K10? Ensure &ldquo;OTG Connection&rdquo; is toggled ON in Android Settings.</em>
-            </div>
-          </div>
-        )}
 
         {/* Browser Web Serial Setup / Warnings when Unsupported */}
         {!isBrowserSupported && (

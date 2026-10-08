@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import HeroBackground from './HeroBackground';
@@ -29,6 +29,22 @@ function ModelLoadingPlaceholder() {
 }
 
 export default function Hero() {
+  const [isDesktop, setIsDesktop] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth > 1024;
+    }
+    return true;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mql = window.matchMedia('(min-width: 1025px)');
+    const updateMatches = () => setIsDesktop(mql.matches);
+    updateMatches();
+    mql.addEventListener('change', updateMatches);
+    return () => mql.removeEventListener('change', updateMatches);
+  }, []);
+
   return (
     <section className="hero" aria-labelledby="hero-headline">
       {/* Precision Technical Engineering Square Grid */}
@@ -89,12 +105,14 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* ── Right: K10 3D Model Stage ────────────────────────────────────── */}
-        <div className="hero__model-container" aria-label="UNIHIKER K10 hardware visualization">
-          <Suspense fallback={<ModelLoadingPlaceholder />}>
-            <K10Model glbUrl={GLB_URL} />
-          </Suspense>
-        </div>
+        {/* ── Right: K10 3D Model Stage (Hidden on mobile and tablet) ─────── */}
+        {isDesktop && (
+          <div className="hero__model-container" aria-label="UNIHIKER K10 hardware visualization">
+            <Suspense fallback={<ModelLoadingPlaceholder />}>
+              <K10Model glbUrl={GLB_URL} />
+            </Suspense>
+          </div>
+        )}
 
       </div>
 
