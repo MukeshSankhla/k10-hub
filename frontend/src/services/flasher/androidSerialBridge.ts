@@ -129,10 +129,15 @@ export class AndroidSerialPort {
         if (!this._isOpen || !window.AndroidSerialBridge) {
           throw new Error('Android Serial port is closed.');
         }
-        const b64 = uint8ArrayToBase64(chunk);
-        const sent = window.AndroidSerialBridge.writeData(b64);
-        if (!sent) {
-          throw new Error('Failed to write bytes to Android USB Serial Port.');
+        // Slice large payloads into 8192-byte chunks to avoid blocking WebView JS thread during large SPI flash writes
+        const chunkSize = 8192;
+        for (let i = 0; i < chunk.length; i += chunkSize) {
+          const slice = chunk.subarray(i, i + chunkSize);
+          const b64 = uint8ArrayToBase64(slice);
+          const sent = window.AndroidSerialBridge.writeData(b64);
+          if (!sent) {
+            throw new Error('Failed to write bytes to Android USB Serial Port.');
+          }
         }
       },
     });

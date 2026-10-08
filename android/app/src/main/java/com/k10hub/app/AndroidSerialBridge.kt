@@ -17,14 +17,12 @@ import com.hoho.android.usbserial.driver.UsbSerialDriver
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
 import org.json.JSONObject
-import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * AndroidSerialBridge
- * Exposes high-throughput native Android USB Host serial communication
- * to JavaScript via WebView for UNIHIKER K10 1-Click Flashing.
+ * Exposes native Android USB Host serial communication to JavaScript via WebView.
  */
 @Suppress("unused")
 class AndroidSerialBridge(
@@ -76,7 +74,7 @@ class AndroidSerialBridge(
         currentDevice = device
 
         if (!usbManager.hasPermission(device)) {
-            Log.d(TAG, "Requesting USB permission for device: ${device.deviceName} (VID: 0x${Integer.toHexString(device.vendorId)}, PID: 0x${Integer.toHexString(device.productId)})")
+            Log.d(TAG, "Requesting USB permission for device: ${device.deviceName} (VID: ${device.vendorId}, PID: ${device.productId})")
             activity.requestUsbPermission(device)
             response.put("success", false)
             response.put("error", "USB permission requested. Please tap Allow on the Android system prompt.")
@@ -109,7 +107,7 @@ class AndroidSerialBridge(
 
             val driver = getDriverForDevice(device)
             if (driver == null || driver.ports.isEmpty()) {
-                Log.e(TAG, "No compatible USB Serial driver found for device VID 0x${Integer.toHexString(device.vendorId)} PID 0x${Integer.toHexString(device.productId)}")
+                Log.e(TAG, "No compatible USB Serial driver found for device VID ${device.vendorId} PID ${device.productId}")
                 return false
             }
 
@@ -134,7 +132,7 @@ class AndroidSerialBridge(
             // Flush / drain any stale bytes left in the USB endpoint buffer
             try {
                 val dummyBuffer = ByteArray(1024)
-                port.read(dummyBuffer, 40)
+                port.read(dummyBuffer, 50)
             } catch (_: Exception) {}
 
             usbSerialPort = port
@@ -142,7 +140,7 @@ class AndroidSerialBridge(
             currentDevice = device
 
             startReadThread()
-            Log.i(TAG, "Successfully opened port for ${device.productName ?: device.deviceName} (VID: 0x${Integer.toHexString(device.vendorId)}) at $baudRate baud.")
+            Log.i(TAG, "Successfully opened port for ${device.productName ?: device.deviceName} (VID: ${device.vendorId}, PID: ${device.productId}) at $baudRate baud.")
             return true
         } catch (e: Exception) {
             Log.e(TAG, "Error opening serial port: ${e.message}", e)
@@ -202,7 +200,7 @@ class AndroidSerialBridge(
         val port = usbSerialPort ?: return false
         return try {
             val bytes = Base64.decode(base64Data, Base64.NO_WRAP)
-            port.write(bytes, 2000)
+            port.write(bytes, 5000) // Increased write timeout to 5000ms for SPI flash sector erases
             true
         } catch (e: Exception) {
             Log.e(TAG, "Write error: ${e.message}")
@@ -237,36 +235,20 @@ class AndroidSerialBridge(
 
     /**
      * Continuously reads incoming bytes from the USB port and dispatches them to JavaScript.
-     * Uses micro-batching to eliminate UI thread saturation during high-speed 921600 baud flashing.
      */
     private fun startReadThread() {
         isRunning.set(true)
         readThread = Thread {
-            val rawBuffer = ByteArray(4096)
-            val batchStream = ByteArrayOutputStream(4096)
-
+            val buffer = ByteArray(4096)
             while (isRunning.get()) {
                 val port = usbSerialPort ?: break
                 try {
-                    // Read with short 20ms timeout
-                    val bytesRead = port.read(rawBuffer, 20)
+                    val bytesRead = port.read(buffer, 50)
                     if (bytesRead > 0) {
-                        batchStream.write(rawBuffer, 0, bytesRead)
+                        val chunk = ByteArray(bytesRead)
+                        System.arraycopy(buffer, 0, chunk, 0, bytesRead)
+                        val base64Chunk = Base64.encodeToString(chunk, Base64.NO_WRAP)
 
-                        // Drain any additional immediately available chunks without blocking
-                        while (isRunning.get() && batchStream.size() < 4096) {
-                            val extra = try { port.read(rawBuffer, 2) } catch (_: Exception) { 0 }
-                            if (extra > 0) {
-                                batchStream.write(rawBuffer, 0, extra)
-                            } else {
-                                break
-                            }
-                        }
-
-                        val dataToSend = batchStream.toByteArray()
-                        batchStream.reset()
-
-                        val base64Chunk = Base64.encodeToString(dataToSend, Base64.NO_WRAP)
                         activity.runOnUiThread {
                             webView.evaluateJavascript(
                                 "if (window.__onAndroidSerialData) { window.__onAndroidSerialData('$base64Chunk'); }",
@@ -280,9 +262,7 @@ class AndroidSerialBridge(
                     }
                     break
                 } catch (e: Exception) {
-                    if (isRunning.get()) {
-                        Log.e(TAG, "Unexpected read thread error: ${e.message}")
-                    }
+                    Log.e(TAG, "Unexpected read thread error: ${e.message}")
                     break
                 }
             }
@@ -300,8 +280,8 @@ class AndroidSerialBridge(
         val deviceList = usbManager.deviceList
         for (device in deviceList.values) {
             val vid = device.vendorId
-            // 0x1A86 (CH340), 0x10C4 (CP210x), 0x303A (ESP32 CDC), 0x0403 (FTDI), 0x2341 (Arduino), 0x2E8A (RP2040), 0x0483 (STM32)
-            if (vid == 0x1A86 || vid == 0x10C4 || vid == 0x303A || vid == 0x0403 || vid == 0x2341 || vid == 0x2E8A || vid == 0x0483) {
+            // 6790 (CH340), 4292 (CP210x), 12346 (ESP32), 1027 (FTDI), 9025 (Arduino), 11914 (RP2040), 1155 (STM32)
+            if (vid == 6790 || vid == 4292 || vid == 12346 || vid == 1027 || vid == 9025 || vid == 11914 || vid == 1155) {
                 return device
             }
         }
@@ -324,19 +304,19 @@ class AndroidSerialBridge(
         val vid = device.vendorId
 
         when (vid) {
-            0x303A -> {
+            12346 -> {
                 // Espressif USB CDC ACM (ESP32-S3, ESP32-C3, ESP32-S2, ESP32-P4)
                 customTable.addProduct(vid, pid, CdcAcmSerialDriver::class.java)
             }
-            0x1A86 -> {
-                // WCH CH340 / CH341 / CH9102
+            6790 -> {
+                // WCH CH340 / CH341
                 customTable.addProduct(vid, pid, Ch34xSerialDriver::class.java)
             }
-            0x10C4 -> {
+            4292 -> {
                 // Silicon Labs CP210x
                 customTable.addProduct(vid, pid, Cp21xxSerialDriver::class.java)
             }
-            0x0403 -> {
+            1027 -> {
                 // FTDI
                 customTable.addProduct(vid, pid, FtdiSerialDriver::class.java)
             }
@@ -353,13 +333,13 @@ class AndroidSerialBridge(
         // 3. Direct driver initialization fallback if probe table failed
         return try {
             when (vid) {
-                0x1A86 -> Ch34xSerialDriver(device)
-                0x10C4 -> Cp21xxSerialDriver(device)
-                0x0403 -> FtdiSerialDriver(device)
+                6790 -> Ch34xSerialDriver(device)
+                4292 -> Cp21xxSerialDriver(device)
+                1027 -> FtdiSerialDriver(device)
                 else -> CdcAcmSerialDriver(device)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Fallback driver initialization failed for VID 0x${Integer.toHexString(vid)} PID 0x${Integer.toHexString(pid)}: ${e.message}")
+            Log.e(TAG, "Fallback driver initialization failed for VID $vid PID $pid: ${e.message}")
             null
         }
     }

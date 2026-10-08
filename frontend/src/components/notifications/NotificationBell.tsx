@@ -18,6 +18,7 @@ import {
   Megaphone,
   Info,
   Shield,
+  X,
 } from 'lucide-react';
 import { api, AppNotification } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -121,18 +122,20 @@ export default function NotificationBell() {
     };
   }, [user, fetchNotifications]);
 
-  // Handle click outside to close popover
+  // Handle click/tap outside to close popover
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
+    function handleClickOutside(e: MouseEvent | TouchEvent) {
       if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
     }
     if (open) {
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
     };
   }, [open]);
 
@@ -244,36 +247,28 @@ export default function NotificationBell() {
         )}
       </button>
 
-      {/* Popover Dropdown */}
+      {/* Mobile Backdrop Overlay */}
       {open && (
         <div
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 10px)',
-            right: 0,
-            width: '380px',
-            maxWidth: 'calc(100vw - 32px)',
-            backgroundColor: 'var(--color-surface)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-xl)',
-            boxShadow: '0 16px 40px rgba(0, 0, 0, 0.18)',
-            zIndex: 1200,
-            display: 'flex',
-            flexDirection: 'column',
-            maxHeight: '520px',
-            overflow: 'hidden',
-            animation: 'fadeIn 0.15s ease-out',
-          }}
-        >
+          className="notification-backdrop"
+          onClick={() => setOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Popover Dropdown */}
+      {open && (
+        <div className="notification-popover">
           {/* Popover Header */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '14px 16px',
+              padding: '12px 16px',
               borderBottom: '1px solid var(--color-border)',
               backgroundColor: 'var(--color-surface)',
+              flexShrink: 0,
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -296,28 +291,55 @@ export default function NotificationBell() {
               )}
             </div>
 
-            {notifications.length > 0 && unreadCount > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {notifications.length > 0 && unreadCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleMarkAllRead}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--color-accent)',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '4px 6px',
+                    borderRadius: 'var(--radius-sm)',
+                  }}
+                >
+                  <CheckCheck size={14} />
+                  <span>Mark all read</span>
+                </button>
+              )}
               <button
                 type="button"
-                onClick={handleMarkAllRead}
+                onClick={() => setOpen(false)}
+                title="Close"
+                aria-label="Close notifications"
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: 'var(--color-accent)',
-                  fontSize: '12px',
-                  fontWeight: 600,
+                  color: 'var(--color-ink-tertiary)',
                   cursor: 'pointer',
+                  padding: '4px',
+                  borderRadius: 'var(--radius-sm)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '4px',
-                  padding: '4px 6px',
-                  borderRadius: 'var(--radius-sm)',
+                  justifyContent: 'center',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--color-ink-primary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--color-ink-tertiary)';
                 }}
               >
-                <CheckCheck size={14} />
-                <span>Mark all read</span>
+                <X size={16} />
               </button>
-            )}
+            </div>
           </div>
 
           {/* Notifications List */}

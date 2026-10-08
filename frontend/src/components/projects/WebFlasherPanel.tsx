@@ -49,11 +49,7 @@ export default function WebFlasherPanel({ project, onFlashSuccess }: WebFlasherP
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [deviceInfo, setDeviceInfo] = useState<ConnectedDeviceInfo | null>(null);
-  const [baudRate, setBaudRate] = useState<number>(
-    serialService.isAndroidNativeApp() ? 230400   // Android USB OTG bridge: stable for large files
-    : serialService.isMobile() ? 460800           // Android Chrome WebSerial
-    : 921600                                       // Desktop Chrome / Edge
-  );
+  const [baudRate, setBaudRate] = useState<number>(921600);
   const [flagCopied, setFlagCopied] = useState(false);
   const [showBaudSettings, setShowBaudSettings] = useState(false);
 

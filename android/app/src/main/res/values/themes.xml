@@ -7,14 +7,14 @@
         <item name="postSplashScreenTheme">@style/Theme.K10Hub</item>
     </style>
 
-    <!-- Main Application Theme -->
+    <!-- Main Application Theme (Adaptive Full Screen Edge-to-Edge) -->
     <style name="Theme.K10Hub" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimary">@color/brand_accent</item>
-        <item name="colorPrimaryDark">@color/brand_primary</item>
+        <item name="colorPrimaryDark">@color/brand_paper</item>
         <item name="colorAccent">@color/brand_accent</item>
-        <item name="android:windowBackground">@color/brand_primary</item>
-        <item name="android:statusBarColor">@color/brand_primary</item>
-        <item name="android:navigationBarColor">@color/brand_primary</item>
-        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowBackground">@color/brand_paper</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 </resources>

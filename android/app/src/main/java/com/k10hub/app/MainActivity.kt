@@ -32,6 +32,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
 import com.k10hub.app.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -88,6 +89,12 @@ class MainActivity : AppCompatActivity() {
         // Install Android 12+ SplashScreen before super.onCreate()
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+
+        // Enable Edge-to-Edge full screen layout and dark system status/nav bar icons over light paper background
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+        windowInsetsController.isAppearanceLightStatusBars = true
+        windowInsetsController.isAppearanceLightNavigationBars = true
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)

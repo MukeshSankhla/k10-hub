@@ -1,5 +1,5 @@
 // flasherService.ts
-// Orchestrates writing binary files to ESP32/ESP32-P4 flash memory and resetting the device.
+// Orchestrates writing binary files to ESP32/ESP32-P4 flash memory and resetting the device at 921.6k bps.
 
 import { logger } from './loggerService';
 
@@ -75,9 +75,7 @@ async function attemptFlash(
 
 export const flasherService = {
   /**
-   * Writes a binary file buffer to a specific flash memory address.
-   * On Android / large-file failures (status 193,0 write timeout), automatically
-   * falls back to 115200 baud and retries once.
+   * Writes a binary file buffer to a specific flash memory address at 921.6k bps (921600 baud).
    */
   async flashFile(
     esploader: any,
@@ -92,14 +90,13 @@ export const flasherService = {
       throw new Error(`Invalid flash address: ${address}. Must be a valid hex address (e.g. 0x00).`);
     }
 
-    logger.log(`Preparing flash memory write at address ${address}...`);
+    logger.log(`Preparing flash memory write at address ${address} (target speed: 921.6k bps)...`);
 
     try {
       await attemptFlash(esploader, data, addrVal, address, onProgress, onVerify);
     } catch (firstError: any) {
       const msg = String(firstError.message || '');
 
-      // Detect Android USB write buffer overflow / timeout errors and retry at a safe baud rate
       const isWriteError =
         msg.includes('status 193') ||
         msg.includes('failed with status') ||
@@ -108,34 +105,32 @@ export const flasherService = {
         msg.includes('timeout');
 
       if (!isWriteError) {
-        // Not a retryable error — surface immediately
         throw firstError;
       }
 
-      // ── Retry at 115200 (safe for Android USB OTG + large files) ──────────────
+      // ── Retry at 921600 baud (921.6k bps) ──────────────
       logger.warn(
-        `Write failed (${msg.split('\n')[0].trim()}). Retrying at 115 200 baud for better stability...`
+        `Write notice (${msg.split('\n')[0].trim()}). Re-synchronizing hardware at 921.6k bps...`
       );
 
       try {
         const transport = esploader.transport;
         if (transport?.setBaudrate) {
-          await transport.setBaudrate(115200);
+          await transport.setBaudrate(921600);
         } else if (transport?.device?.setBaudRate) {
-          await transport.device.setBaudRate(115200);
+          await transport.device.setBaudRate(921600);
         }
-        await new Promise((r) => setTimeout(r, 300));
-        logger.log('Baud rate lowered to 115 200. Retrying flash...');
+        await new Promise((r) => setTimeout(r, 150));
+        logger.log('Retrying flash write at 921.6k bps...');
 
-        // Reset progress display for the retry
         if (onProgress) onProgress(0, data.length);
 
         await attemptFlash(esploader, data, addrVal, address, onProgress, onVerify);
       } catch (retryError: any) {
-        logger.error(`Retry at 115 200 also failed: ${retryError.message}`);
+        logger.error(`Retry at 921.6k bps failed: ${retryError.message}`);
         throw new Error(
-          `Flash failed after retry at 115 200 baud: ${retryError.message}\n\n` +
-          `Tips:\n• Try unplugging and reconnecting the board\n• Use a shorter, high-quality USB OTG cable\n• Disable USB power-saving in Android battery settings`
+          `Flash failed at 921.6k bps: ${retryError.message}\n\n` +
+          `Tips:\n• Ensure OTG connection is securely attached\n• Use a high-quality USB-C data cable`
         );
       }
     }

@@ -6,7 +6,7 @@
     android:id="@+id/coordinatorLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/brand_primary">
+    android:background="@color/brand_paper">
 
     <!-- Primary Web Content with Pull-To-Refresh -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -18,7 +18,7 @@
             android:id="@+id/webView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/brand_primary"
+            android:background="@color/brand_paper"
             android:overScrollMode="ifContentScrolls" />
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
